@@ -1,65 +1,100 @@
 import fetch from 'node-fetch'
 
-let handler = async (m, { conn, args, usedPrefix, command }) => {
-  if (!args[0]) return m.reply(
-    `📥 Uso correcto:
-${usedPrefix + command} <enlace válido de TikTok>
+const handler = async (m, { conn, args, usedPrefix, command }) => {
+  if (!args[0]) return m.reply(`╭─❍「 ✦ MaycolPlus ✦ 」
+│
+├─ Ay bebé, necesito un enlace de TikTok~
+├─ Uso correcto:
+│  ${usedPrefix + command} <enlace válido>
+├─ Ejemplo:
+│  ${usedPrefix + command} https://www.tiktok.com/@usuario/video/123456789
+╰─✦`)
 
-Ejemplo:
-${usedPrefix + command} https://www.tiktok.com/@usuario/video/123456789`
-  )
+  await m.react("🔥")
 
   try {
-    await conn.sendMessage(m.chat, { react: { text: '🕒', key: m.key } })
+    let urlVideo = ""
+    let title = "Desconocido"
+    let authorName = "Desconocido"
+    let duration = "Desconocida"
+    let views = 0
+    let likes = 0
+    let comments = 0
+    let shares = 0
+    let thumbnail = ""
 
-    let apiURL = `https://myapiadonix.vercel.app/api/tiktok?url=${encodeURIComponent(args[0])}`
-    let response = await fetch(apiURL)
-    let data = await response.json()
+    try {
+      const apiMay = `https://mayapi.ooguy.com/tiktok?url=${encodeURIComponent(args[0])}&apikey=soymaycol<3`
+      const resMay = await fetch(apiMay)
+      const dataMay = await resMay.json()
+      if (dataMay.status && dataMay.result?.url) {
+        urlVideo = dataMay.result.url
+        title = dataMay.result.title || title
+      } else throw new Error("MayAPI fallo")
+    } catch {
+      const apiAdonix = `https://api-adonix.ultraplus.click/download/tiktok?apikey=SoyMaycol<3&url=${encodeURIComponent(args[0])}`
+      const resAdonix = await fetch(apiAdonix)
+      const dataAdonix = await resAdonix.json()
+      if (dataAdonix.status === "true" && dataAdonix.data?.video) {
+        urlVideo = dataAdonix.data.video
+        title = dataAdonix.data.title || title
+        authorName = dataAdonix.data.author.name || authorName
+        duration = dataAdonix.data.duration || duration
+        views = dataAdonix.data.views || views
+        likes = dataAdonix.data.likes || likes
+        comments = dataAdonix.data.comments || comments
+        shares = dataAdonix.data.shares || shares
+        thumbnail = dataAdonix.data.thumbnail || ""
+      } else throw new Error("Adonix fallo")
+    }
 
-    if (data.status !== 200 || !data.result?.video)
-      throw new Error('No se pudo obtener el video')
+    const msgInfo = `╭─❍「 ✦ MaycolPlus ✦ 」
+│
+├─ 「❀」${title}
+│
+├─ ✧ Autor: ${authorName}
+├─ ✧ Duración: ${duration} seg
+├─ ✧ Vistas: ${views.toLocaleString()}
+├─ ✧ Likes: ${likes.toLocaleString()}
+├─ ✧ Comentarios: ${comments.toLocaleString()}
+├─ ✧ Compartidos: ${shares.toLocaleString()}
+╰─✦`
 
-    let info = data.result
-
-    let caption = `
-📌 Título: *${info.title}*
-👤 Autor: *@${info.author.username || 'Desconocido'}*
-⏱️ Duración: *${info.duration || 'N/D'} segundos*
-
-📊 Estadísticas
-♥ Likes: *${info.likes?.toLocaleString() || 0}*
-💬 Comentarios: *${info.comments?.toLocaleString() || 0}*
-🔁 Compartidos: *${info.shares?.toLocaleString() || 0}*
-👁️ Vistas: *${info.views?.toLocaleString() || 0}*`.trim()
+    if (thumbnail) {
+      await conn.sendMessage(m.chat, { image: { url: thumbnail }, caption: msgInfo }, { quoted: m })
+    } else {
+      await m.reply(msgInfo)
+    }
 
     await conn.sendMessage(m.chat, {
-      video: { url: info.video },
-      caption,
-      fileName: `${info.title}.mp4`,
-      mimetype: 'video/mp4',
-      contextInfo: {
-        externalAdReply: {
-          title: info.title,
-          body: `Autor: ${info.author.name || 'Desconocido'}`,
-          thumbnailUrl: info.thumbnail,
-          sourceUrl: args[0],
-          mediaType: 1,
-          renderLargerThumbnail: true
-        }
-      }
+      video: { url: urlVideo },
+      caption: `╭─❍「 ✦ MaycolPlus ✦ 」
+│
+├─ 「❀」${title}
+│
+├─ ¡Listo mi amor! ♡
+├─ Disfruta lo que preparé solo para ti~
+╰─✦`,
+      fileName: `${title}.mp4`,
+      mimetype: 'video/mp4'
     }, { quoted: m })
 
-    await conn.sendMessage(m.chat, { react: { text: '✅', key: m.key } })
+    await m.react("💋")
 
   } catch (err) {
     console.error(err)
-    await conn.sendMessage(m.chat, { react: { text: '❌', key: m.key } })
-    m.reply('❌ No se pudo procesar el video. Intenta nuevamente más tarde.')
+    await m.react("❌")
+    m.reply(`╭─❍「 ✦ MaycolPlus ✦ 」
+│
+├─ Ay bebé... algo no salió bien
+├─ ${err.message}
+╰─✦`)
   }
 }
 
 handler.command = ['tiktok', 'tt']
 handler.help = ['tiktok']
 handler.tags = ['downloader']
+handler.register = true
 
 export default handler
