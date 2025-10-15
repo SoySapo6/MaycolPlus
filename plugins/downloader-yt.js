@@ -72,32 +72,20 @@ const handler = async (m, { conn, text, command }) => {
 }
 
 const downloadMedia = async (conn, m, url, title, thumbnail, type) => {
-  let progress = 10
-  let progressInterval
-  let lastProgressText = ""
-
   try {
     const cleanTitle = cleanName(title) + (type === "mp3" ? ".mp3" : ".mp4")
 
-    progressInterval = setInterval(async () => {
-      if (progress < 80) {
-        progress += Math.floor(Math.random() * 5) + 2
-        if (progress > 80) progress = 80
-        const progressBar = createProgressBar(progress)
-        const message = `╭─❍「 ✦ MaycolPlus ✦ 」
+    const msg = `╭─❍「 ✦ MaycolPlus ✦ 」
 │
 ├─ 「❀」${title}
 │
-├─ Procesando tu ${type === "mp3" ? "audio" : "video"}... ♡
-│
-├─ ${progressBar} ${progress}%
+├─ Preparando tu ${type === "mp3" ? "audio sensual" : "video caliente"}... ♡
 ╰─✦`
-        if (message !== lastProgressText) {
-          lastProgressText = message
-          await updateMessage(conn, m.chat, lastProgressText, thumbnail)
-        }
-      }
-    }, 800)
+    if (thumbnail) {
+      await conn.sendMessage(m.chat, { image: { url: thumbnail }, caption: msg }, { quoted: m })
+    } else {
+      await m.reply(msg)
+    }
 
     const apiUrl = `https://mayapi.ooguy.com/ytdl?url=${encodeURIComponent(url)}&type=${type}&apikey=SoyMaycol<3`
     const response = await fetch(apiUrl)
@@ -106,19 +94,6 @@ const downloadMedia = async (conn, m, url, title, thumbnail, type) => {
     if (!data || !data.status || !data.result || !data.result.url) {
       throw new Error("No pude conseguir el archivo bebé")
     }
-
-    progress = 90
-    const progressBar90 = createProgressBar(progress)
-    const message90 = `╭─❍「 ✦ MaycolPlus ✦ 」
-│
-├─ 「❀」${data.result.title || title}
-│
-├─ Ya casi termino contigo~ ♡
-│
-├─ ${progressBar90} ${progress}%
-╰─✦`
-    await updateMessage(conn, m.chat, message90, thumbnail)
-    clearInterval(progressInterval)
 
     if (type === "mp3") {
       await conn.sendMessage(m.chat, {
@@ -134,44 +109,28 @@ const downloadMedia = async (conn, m, url, title, thumbnail, type) => {
       }, { quoted: m })
     }
 
-    const finalMessage = `╭─❍「 ✦ MaycolPlus ✦ 」
+    const doneMsg = `╭─❍「 ✦ MaycolPlus ✦ 」
 │
 ├─ 「❀」${data.result.title || title}
 │
 ├─ ¡Listo mi amor! ♡
-├─ ${createProgressBar(100)} 100%
+├─ Disfruta lo que preparé solo para ti~
 ╰─✦`
-    await updateMessage(conn, m.chat, finalMessage, thumbnail)
+    await m.reply(doneMsg)
     await m.react("💋")
 
   } catch (error) {
-    clearInterval(progressInterval)
     console.error("Error descargando:", error)
-    const errorMessage = `╭─❍「 ✦ MaycolPlus ✦ 」
+    const errorMsg = `╭─❍「 ✦ MaycolPlus ✦ 」
 │
 ├─ 「❀」${title}
 │
 ├─ Ay bebé... algo no salió bien
 ├─ ${error.message}
 ╰─✦`
-    await updateMessage(conn, m.chat, errorMessage, thumbnail)
+    await m.reply(errorMsg)
     await m.react("😢")
   }
-}
-
-const updateMessage = async (conn, chatId, newText, thumbnail) => {
-  if (thumbnail) {
-    await conn.sendMessage(chatId, { image: { url: thumbnail }, caption: newText })
-  } else {
-    await conn.sendMessage(chatId, { text: newText })
-  }
-}
-
-const createProgressBar = (percentage) => {
-  const totalBars = 10
-  const filledBars = Math.floor((percentage / 100) * totalBars)
-  const emptyBars = totalBars - filledBars
-  return "▓".repeat(filledBars) + "░".repeat(emptyBars)
 }
 
 const cleanName = (name) => name.replace(/[^\w\s-_.]/gi, "").substring(0, 50)
