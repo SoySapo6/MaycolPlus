@@ -36,7 +36,7 @@ export async function before(m, { conn }) {
           newsletterName: nombreBot,
         },
         externalAdReply: {
-          title: nombreBot,
+          title: global.namecanal,
           body: global.author,
           thumbnailUrl: bannerFinal,
           sourceUrl: null,
