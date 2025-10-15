@@ -87,7 +87,7 @@ const downloadMedia = async (conn, m, url, title, thumbnail, type) => {
       await m.reply(msg)
     }
 
-    const apiUrl = `https://mayapi.ooguy.com/ytdl?url=${encodeURIComponent(url)}&type=${type}&apikey=soymaycol<3`
+    const apiUrl = `https://mayapi.ooguy.com/ytdl?url=${encodeURIComponent(url)}&type=${type}&apikey=SoyMaycol<3`
     const response = await fetch(apiUrl)
     const data = await response.json()
 
@@ -95,6 +95,7 @@ const downloadMedia = async (conn, m, url, title, thumbnail, type) => {
       throw new Error("No pude conseguir el archivo bebé")
     }
 
+    // Envío del archivo (audio o video)
     if (type === "mp3") {
       await conn.sendMessage(m.chat, {
         audio: { url: data.result.url },
@@ -109,9 +110,13 @@ const downloadMedia = async (conn, m, url, title, thumbnail, type) => {
       }, { quoted: m })
     }
 
+    // Mensaje combinado final 💋
     const doneMsg = `╭─❍「 ✦ MaycolPlus ✦ 」
 │
 ├─ 「❀」${data.result.title || title}
+│
+├─ ✧ Tipo: ${type === "mp3" ? "Audio" : "Video"}
+├─ ✧ Descargado con amor 💞
 │
 ├─ ¡Listo mi amor! ♡
 ├─ Disfruta lo que preparé solo para ti~
