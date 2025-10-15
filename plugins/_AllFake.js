@@ -33,10 +33,10 @@ export async function before(m, { conn }) {
         forwardedNewsletterMessageInfo: {
           newsletterJid: newsletterJidRandom,
           serverMessageId: 100,
-          newsletterName: nombreBot,
+          newsletterName: global.namecanal,
         },
         externalAdReply: {
-          title: global.namecanal,
+          title: nombreBot,
           body: global.author,
           thumbnailUrl: bannerFinal,
           sourceUrl: null,
