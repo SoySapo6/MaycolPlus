@@ -1,6 +1,6 @@
 import { WPP } from '@wppconnect-team/wppconnect';
 
-export const handler = async (msg, { conn }) => {
+const handler = async (msg, { conn }) => {
   const chatId = msg.key.remoteJid;
   const senderId = msg.key.participant || msg.key.remoteJid;
 
