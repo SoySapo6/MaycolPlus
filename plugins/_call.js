@@ -31,7 +31,6 @@ const handler = async (msg, { conn }) => {
 };
 
 handler.command = ['callme'];
-handler.group = true;
 handler.private = true;
 
 export default handler;
