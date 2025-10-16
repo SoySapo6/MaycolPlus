@@ -7,6 +7,7 @@ global.owner = [['180650938249287', 'SoyMaycol', true]]
 global.mods = []
 global.prems = []
 
+global.emoji = '🍡'
 global.namebot = '𝙼𝚊𝚢𝚌𝚘𝚕𝐏𝐥𝐮𝐬'
 global.redes = 'https://chat.whatsapp.com/KDI7NNovzdwJayx1gI1cue?mode=ems_copy_t'
 global.botname = '𝕄𝕒𝕪𝕔𝕠𝕝𝐏𝐥𝐮𝐬'
