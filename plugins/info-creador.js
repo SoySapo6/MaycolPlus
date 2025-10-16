@@ -4,7 +4,7 @@ let handler = async (m, { conn }) => {
   const email = 'soymaycol.cn@gmail.com'
   const org = 'Programador de Webs, Bots y más'
   const note = 'Tengo 12 años XD'
-  const portfolio = 'https://soymaycol.is-a.dev'
+  const portfolio = 'https://SoyMaycol.is-a.dev'
 
   const vcard = `
 BEGIN:VCARD
@@ -19,11 +19,15 @@ NOTE:${note}
 END:VCARD
 `.trim()
 
+  // Esto asume que ya cargaste global.rcanal desde tu allfake antes de ejecutar el comando
+  const context = global.rcanal?.contextInfo || {}
+
   await conn.sendMessage(m.chat, {
     contacts: {
       displayName: name,
       contacts: [{ vcard }],
     },
+    contextInfo: context // <--- aquí aplicamos rcanal + adreply
   }, { quoted: m })
 }
 
