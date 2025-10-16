@@ -190,9 +190,8 @@ const handler = async (m, { conn, text }) => {
       const helpText = `
 ╭─❍「 ✦ Perfil de ${userDoro.name} ✦ 」
 ${profileText}
-╰─✦
-
-╭─❍「 ✦ Comandos de Doro ✦ 」
+│
+├─❍「 ✦ Comandos de Doro ✦ 」
 │
 ├─ doro crear <nombre>
 ├─ doro perfil <nombre>
