@@ -1,355 +1,286 @@
-import fs from "fs";
-import path from "path";
+import fs from 'fs/promises';
 
-const DB_PATH = path.join(".", "database", "doros.json");
+const doroImages = [
+  { action: "eating", url: "https://raw.githubusercontent.com/SoySapo6/tmp/refs/heads/main/Permanentes/doro%20en%20una%20bolsa%20de%20doritos.jpeg" },
+  { action: "sleeping", url: "https://raw.githubusercontent.com/SoySapo6/tmp/refs/heads/main/Permanentes/doro%20durmiendo.jpg" },
+  { action: "playing", url: "https://raw.githubusercontent.com/SoySapo6/tmp/refs/heads/main/Permanentes/doro%20con%20el%20celular.jpeg" },
+  { action: "new_friend", url: "https://raw.githubusercontent.com/SoySapo6/tmp/refs/heads/main/Permanentes/Doro%20haciendo%20un%20amigo.jpeg" },
+  { action: "fallen", url: "https://raw.githubusercontent.com/SoySapo6/tmp/refs/heads/main/Permanentes/Doro%20Cay%C3%A9ndose%20en%20el%20Piso.jpeg" },
+  { action: "annoying", url: "https://raw.githubusercontent.com/SoySapo6/tmp/refs/heads/main/Permanentes/las%20mascotas%20de%20otros%20molestos%20contigo.jpeg" },
+  { action: "sick", url: "https://raw.githubusercontent.com/SoySapo6/tmp/refs/heads/main/Permanentes/Doro%20Cay%C3%A9ndose%20en%20el%20Piso.jpeg"}
+];
 
-function loadDB() {
+const dbPath = './database/doros.json';
+const COOLDOWN = 60 * 60 * 1000; // 1 hour
+const XP_PER_LEVEL = 100;
+
+const achievements = {
+  "social_butterfly": { name: "Mariposa Social", description: "Consigue 10 amigos.", goal: 10 },
+  "xp_master": { name: "Maestro de XP", description: "Alcanza 1000 XP.", goal: 1000 }
+};
+
+const getRandomImage = (action) => {
+  const images = doroImages.filter(img => img.action === action);
+  if (images.length === 0) return doroImages.find(img => img.action === 'fallen').url;
+  return images[Math.floor(Math.random() * images.length)].url;
+};
+
+const readDb = async () => {
   try {
-    if (!fs.existsSync(DB_PATH)) {
-      fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
-      fs.writeFileSync(DB_PATH, "[]");
-    }
-    const raw = fs.readFileSync(DB_PATH, "utf8");
-    return JSON.parse(raw || "[]");
+    const data = await fs.readFile(dbPath, 'utf8');
+    return JSON.parse(data);
   } catch (e) {
+    if (e.code === 'ENOENT') {
+      return [];
+    }
+    console.error("Failed to read or parse doros.json:", e);
     return [];
   }
-}
-
-function saveDB(db) {
-  fs.writeFileSync(DB_PATH, JSON.stringify(db, null, 2));
-}
-
-function nowPeru() {
-  const d = new Date();
-  const s = d.toLocaleString("en-US", { timeZone: "America/Lima" });
-  return new Date(s);
-}
-
-function formatMention(jid) {
-  if (!jid) return "";
-  const clean = jid.split("@")[0];
-  return `@${clean}`;
-}
-
-function randomChance(p) {
-  return Math.random() < p;
-}
-
-function clamp(v, a, b) {
-  return Math.max(a, Math.min(b, v));
-}
-
-const ACTION_IMAGES = {
-  bag: "https://raw.githubusercontent.com/SoySapo6/tmp/refs/heads/main/Permanentes/doro%20en%20una%20bolsa%20de%20doritos.jpeg",
-  sleeping: "https://raw.githubusercontent.com/SoySapo6/tmp/refs/heads/main/Permanentes/doro%20durmiendo.jpg",
-  phone: "https://raw.githubusercontent.com/SoySapo6/tmp/refs/heads/main/Permanentes/doro%20con%20el%20celular.jpeg",
-  eating: "https://raw.githubusercontent.com/SoySapo6/tmp/refs/heads/main/Permanentes/doro%20comienzo.jpeg",
-  friend: "https://raw.githubusercontent.com/SoySapo6/tmp/refs/heads/main/Permanentes/Doro%20haciendo%20un%20amigo.jpeg",
-  fall: "https://raw.githubusercontent.com/SoySapo6/tmp/refs/heads/main/Permanentes/Doro%20Cay%C3%A9ndose%20en%20el%20Piso.jpeg",
-  annoying: "https://raw.githubusercontent.com/SoySapo6/tmp/refs/heads/main/Permanentes/las%20mascotas%20de%20otros%20molestos%20contigo.jpeg"
 };
 
-function createEmptyDoro(ownerJid, name) {
-  const t = nowPeru().toISOString();
-  return {
-    owner: ownerJid,
-    name,
-    createdAt: t,
-    stats: {
-      health: 100,
-      hunger: 0,
-      happiness: 80,
-      energy: 100
-    },
-    xp: 0,
-    level: 1,
-    friends: [],
-    achievements: [],
-    logs: [],
-    pendingRequests: [], // incoming friend requests { fromOwner, fromDoroName, at }
-    lastSleep: null,
-    lastFed: null,
-    lastPlayed: null
-  };
-}
+const saveDb = async (data) => {
+  await fs.writeFile(dbPath, JSON.stringify(data, null, 2));
+};
 
-function xpForNext(level) {
-  return 50 + level * 30;
-}
-
-function addLog(doro, text) {
-  doro.logs.unshift({ at: nowPeru().toISOString(), text });
-  if (doro.logs.length > 50) doro.logs.pop();
-}
-
-function pushAchievement(doro, key, title) {
-  if (!doro.achievements.find(a => a.key === key)) {
-    doro.achievements.push({ key, title, at: nowPeru().toISOString() });
-  }
-}
-
-function findDoroByName(db, name) {
-  return db.find(x => x.name.toLowerCase() === name.toLowerCase());
-}
-
-const handler = async (m, { conn, text, command }) => {
-  const db = loadDB();
-  const from = m.sender;
-  const args = (text || "").trim().split(/\s+/).filter(Boolean);
-  const sub = args.shift ? args.shift().toLowerCase() : "";
-  const mention = m.mentionedJid && m.mentionedJid[0] ? m.mentionedJid[0] : null;
-  const userTag = formatMention(from);
-
-  if (["create", "setname"].includes(sub)) {
-    const name = args.join(" ");
-    if (!name) return conn.sendMessage(m.chat, { text: `Debes dar un nombre: \nUso: .doro create <nombre>` }, { quoted: m });
-    if (findDoroByName(db, name)) return conn.sendMessage(m.chat, { text: `Ese nombre ya fue reclamado. Intenta otro.` }, { quoted: m });
-    const newDoro = createEmptyDoro(from, name);
-    db.push(newDoro);
-    saveDB(db);
-    addLog(newDoro, `${userTag} creó a ${name}.`);
-    await conn.sendMessage(m.chat, { image: { url: ACTION_IMAGES.bag }, caption: `╭─❍「 ✦ MaycolPlus ✦ 」\n├─ ¡Tu Doro fue creado! 🐶💖\n├─ Nombre: ${name}\n├─ Dueño: ${userTag}\n╰─✦` }, { quoted: m });
-    return;
-  }
-
-  if (sub === "profile") {
-    const name = args.join(" ");
-    if (!name) return conn.sendMessage(m.chat, { text: `Uso: .doro profile <nombre>` }, { quoted: m });
-    const d = findDoroByName(db, name);
-    if (!d) return conn.sendMessage(m.chat, { text: `No existe un Doro llamado ${name}` }, { quoted: m });
-    const ownerTag = formatMention(d.owner);
-    const stats = d.stats;
-    const achList = d.achievements.length ? d.achievements.map(a => `• ${a.title}`).join("\n") : "—";
-    const friends = d.friends.length ? d.friends.map(f => `${f.name} (${formatMention(f.owner)})`).join("\n") : "—";
-    const msg = `╭─❍「 ✦ Perfil de ${d.name} ✦ 」\n├─ Dueño: ${ownerTag}\n├─ Nivel: ${d.level} (XP ${d.xp}/${xpForNext(d.level)})\n├─ Salud: ${stats.health}\n├─ Hambre: ${stats.hunger}\n├─ Felicidad: ${stats.happiness}\n├─ Energía: ${stats.energy}\n├─ Amigos:\n${friends}\n├─ Logros:\n${achList}\n╰─✦`;
-    await conn.sendMessage(m.chat, { text: msg, mentions: [d.owner] }, { quoted: m });
-    return;
-  }
-
-  if (sub === "feed") {
-    const name = args.join(" ");
-    if (!name) return conn.sendMessage(m.chat, { text: `Uso: .doro feed <nombre>` }, { quoted: m });
-    const d = findDoroByName(db, name);
-    if (!d) return conn.sendMessage(m.chat, { text: `No existe ${name}` }, { quoted: m });
-    if (d.owner !== from) return conn.sendMessage(m.chat, { text: `Solo el dueño puede alimentar a ${name}` }, { quoted: m });
-    d.stats.hunger = clamp(d.stats.hunger - 25, 0, 100);
-    d.stats.health = clamp(d.stats.health + 8, 0, 100);
-    d.xp += 8;
-    d.lastFed = nowPeru().toISOString();
-    addLog(d, `${userTag} alimentó a ${d.name}`);
-    if (d.xp >= xpForNext(d.level)) { d.xp -= xpForNext(d.level); d.level++; pushAchievement(d, `lvl${d.level}`, `Alcanzó nivel ${d.level}`); }
-    saveDB(db);
-    await conn.sendMessage(m.chat, { image: { url: ACTION_IMAGES.eating }, caption: `╭─❍「 ✦ MaycolPlus ✦ 」\n├─ ${d.name} comió rico 🍽️\n├─ Salud: ${d.stats.health}\n├─ Hambre: ${d.stats.hunger}\n╰─✦` }, { quoted: m });
-    return;
-  }
-
-  if (sub === "sleep") {
-    const name = args.join(" ");
-    if (!name) return conn.sendMessage(m.chat, { text: `Uso: .doro sleep <nombre>` }, { quoted: m });
-    const d = findDoroByName(db, name);
-    if (!d) return conn.sendMessage(m.chat, { text: `No existe ${name}` }, { quoted: m });
-    if (d.owner !== from) return conn.sendMessage(m.chat, { text: `Solo el dueño puede dormir a ${name}` }, { quoted: m });
-    const hour = nowPeru().getHours();
-    d.lastSleep = nowPeru().toISOString();
-    d.stats.energy = clamp(d.stats.energy + 50, 0, 100);
-    d.stats.health = clamp(d.stats.health + 10, 0, 100);
-    d.xp += 6;
-    addLog(d, `${userTag} puso a dormir a ${d.name}`);
-    if (d.xp >= xpForNext(d.level)) { d.xp -= xpForNext(d.level); d.level++; pushAchievement(d, `lvl${d.level}`, `Alcanzó nivel ${d.level}`); }
-    saveDB(db);
-    await conn.sendMessage(m.chat, { image: { url: ACTION_IMAGES.sleeping }, caption: `╭─❍「 ✦ MaycolPlus ✦ 」\n├─ ${d.name} se durmió 💤\n├─ Energía: ${d.stats.energy}\n├─ Salud: ${d.stats.health}\n╰─✦` }, { quoted: m });
-    return;
-  }
-
-  if (sub === "play") {
-    const name = args.join(" ");
-    if (!name) return conn.sendMessage(m.chat, { text: `Uso: .doro play <nombre>` }, { quoted: m });
-    const d = findDoroByName(db, name);
-    if (!d) return conn.sendMessage(m.chat, { text: `No existe ${name}` }, { quoted: m });
-    if (d.owner !== from) return conn.sendMessage(m.chat, { text: `Solo el dueño puede jugar con ${name}` }, { quoted: m });
-    if (d.stats.energy < 15) {
-      d.stats.happiness = clamp(d.stats.happiness - 5, 0, 100);
-      addLog(d, `${d.name} está muy cansada para jugar.`);
-      saveDB(db);
-      return conn.sendMessage(m.chat, { text: `${d.name} está cansada, necesita dormir primero.` }, { quoted: m });
+const checkLevelUp = (doro, conn) => {
+    let changed = false;
+    while (doro.xp >= doro.level * XP_PER_LEVEL) {
+        doro.level++;
+        doro.health = 100;
+        doro.happiness = 100;
+        conn.sendMessage(doro.owner, { text: `╭─❍「 ✦ MaycolPlus ✦ 」\n│\n├─ 「❀」¡Felicidades! Tu Doro ${doro.name} ha subido al nivel ${doro.level}.\n│\n╰─✦` });
+        changed = true;
     }
-    d.stats.energy = clamp(d.stats.energy - 20, 0, 100);
-    d.stats.hunger = clamp(d.stats.hunger + 10, 0, 100);
-    d.stats.happiness = clamp(d.stats.happiness + 12, 0, 100);
-    d.xp += 12;
-    d.lastPlayed = nowPeru().toISOString();
-    addLog(d, `${userTag} jugó con ${d.name}`);
-    if (d.xp >= xpForNext(d.level)) { d.xp -= xpForNext(d.level); d.level++; pushAchievement(d, `lvl${d.level}`, `Alcanzó nivel ${d.level}`); }
-    saveDB(db);
-    await conn.sendMessage(m.chat, { image: { url: ACTION_IMAGES.phone }, caption: `╭─❍「 ✦ MaycolPlus ✦ 」\n├─ ${d.name} jugó y se divirtió 🎮\n├─ Felicidad: ${d.stats.happiness}\n├─ Energía: ${d.stats.energy}\n╰─✦` }, { quoted: m });
-    return;
-  }
+    return changed;
+}
 
-  if (sub === "addfriend" || sub === "friend") {
-    const targetName = args.join(" ");
-    if (!targetName) return conn.sendMessage(m.chat, { text: `Uso: .doro addfriend <nombre_de_mascota_de_otro>` }, { quoted: m });
-    const myDoro = db.find(x => x.owner === from);
-    if (!myDoro) return conn.sendMessage(m.chat, { text: `Primero debes tener un Doro. Crea uno con .doro create <nombre>` }, { quoted: m });
-    const target = findDoroByName(db, targetName);
-    if (!target) return conn.sendMessage(m.chat, { text: `No existe ${targetName}` }, { quoted: m });
-    if (target.owner === from) return conn.sendMessage(m.chat, { text: `No puedes enviar solicitud a tu propio Doro.` }, { quoted: m });
-    if (target.friends.find(f => f.name.toLowerCase() === myDoro.name.toLowerCase())) return conn.sendMessage(m.chat, { text: `${targetName} ya es amigo de ${myDoro.name}` }, { quoted: m });
-    target.pendingRequests.push({ fromOwner: from, fromDoroName: myDoro.name, at: nowPeru().toISOString() });
-    addLog(target, `${formatMention(from)} envió una solicitud de amistad.`);
-    saveDB(db);
-    await conn.sendMessage(m.chat, { image: { url: ACTION_IMAGES.friend }, caption: `╭─❍「 ✦ MaycolPlus ✦ 」\n├─ Solicitud enviada a ${targetName} ✅\n├─ Su dueño deberá aceptar con: .doro accept ${targetName} @${target.owner.split("@")[0]}\n╰─✦` }, { quoted: m });
-    return;
+const checkAchievements = (doro, conn) => {
+  let changed = false;
+  if (doro.friends.length >= achievements.social_butterfly.goal && !doro.achievements.includes("social_butterfly")) {
+    doro.achievements.push("social_butterfly");
+    conn.sendMessage(doro.owner, { text: `╭─❍「 ✦ MaycolPlus ✦ 」\n│\n├─ 「❀」¡Tu Doro ${doro.name} ha ganado el logro "${achievements.social_butterfly.name}"!\n│\n╰─✦` });
+    changed = true;
   }
+  if (doro.xp >= achievements.xp_master.goal && !doro.achievements.includes("xp_master")) {
+    doro.achievements.push("xp_master");
+    conn.sendMessage(doro.owner, { text: `╭─❍「 ✦ MaycolPlus ✦ 」\n│\n├─ 「❀」¡Tu Doro ${doro.name} ha ganado el logro "${achievements.xp_master.name}"!\n│\n╰─✦` });
+    changed = true;
+  }
+  return changed;
+};
 
-  if (sub === "accept") {
-    const targetName = args.shift();
-    const mentionJid = mention;
-    if (!targetName || !mentionJid) return conn.sendMessage(m.chat, { text: `Uso: .doro accept <tu_nombre_de_doro> @dueño_del_otro` }, { quoted: m });
-    const myDoro = findDoroByName(db, targetName);
-    if (!myDoro) return conn.sendMessage(m.chat, { text: `No tienes un Doro llamado ${targetName}` }, { quoted: m });
-    if (myDoro.owner !== from) return conn.sendMessage(m.chat, { text: `Solo el dueño puede aceptar solicitudes.` }, { quoted: m });
-    const requester = db.find(x => x.owner === mentionJid);
-    if (!requester) return conn.sendMessage(m.chat, { text: `El dueño mencionado no tiene Doro` }, { quoted: m });
-    const pending = myDoro.pendingRequests.find(r => r.fromOwner === requester.owner);
-    if (!pending) return conn.sendMessage(m.chat, { text: `No hay solicitudes de ese dueño.` }, { quoted: m });
-    myDoro.pendingRequests = myDoro.pendingRequests.filter(r => r.fromOwner !== requester.owner);
-    myDoro.friends.push({ owner: requester.owner, name: pending.fromDoroName });
-    const fromDoro = requester.friends // ensure mutual
-    const reqFromDoro = requester;
-    const theirDoro = requester; // requester holds owner and their pets, but names unique so find by name
-    const reqPet = findDoroByName(db, pending.fromDoroName);
-    if (reqPet && !reqPet.friends.find(f => f.name === myDoro.name && f.owner === myDoro.owner)) {
-      reqPet.friends.push({ owner: myDoro.owner, name: myDoro.name });
+const handleRandomEvents = (doro, conn) => {
+    const chance = Math.random();
+    if (chance < 0.1) {
+        doro.health = Math.max(0, doro.health - 20);
+        doro.isSick = true;
+        const sickImg = getRandomImage('sick');
+        conn.sendMessage(doro.owner, { image: { url: sickImg }, caption: `╭─❍「 ✦ MaycolPlus ✦ 」\n│\n├─ 「❀」¡Oh no! Tu Doro ${doro.name} se ha enfermado. Usa \`doro curar\` para sanarlo.\n│\n╰─✦` });
+        return true;
+    } else if (chance < 0.2) {
+        doro.xp += 20;
+        conn.sendMessage(doro.owner, { text: `╭─❍「 ✦ MaycolPlus ✦ 」\n│\n├─ 「❀」¡Qué suerte! Tu Doro ${doro.name} encontró 20 XP.\n│\n╰─✦` });
+        return true;
     }
-    addLog(myDoro, `${formatMention(requester.owner)} se hizo amigo de ${myDoro.name}`);
-    saveDB(db);
-    await conn.sendMessage(m.chat, { text: `${myDoro.name} ahora es amigo de ${pending.fromDoroName}` }, { quoted: m, mentions: [requester.owner] });
-    return;
-  }
+    return false;
+};
 
-  if (sub === "achievements" || sub === "logros") {
-    const name = args.join(" ");
-    if (!name) return conn.sendMessage(m.chat, { text: `Uso: .doro achievements <nombre>` }, { quoted: m });
-    const d = findDoroByName(db, name);
-    if (!d) return conn.sendMessage(m.chat, { text: `No existe ${name}` }, { quoted: m });
-    const list = d.achievements.length ? d.achievements.map(a => `• ${a.title} (${a.at.split("T")[0]})`).join("\n") : "—";
-    await conn.sendMessage(m.chat, { text: `Logros de ${d.name}:\n${list}` }, { quoted: m });
-    return;
-  }
+const handleTimeBasedActions = (doro, conn) => {
+    const now = new Date();
+    const peruTime = new Date(now.toLocaleString('en-US', { timeZone: 'America/Lima' }));
+    const peruHour = peruTime.getHours();
 
-  if (sub === "friends" || sub === "amigos") {
-    const name = args.join(" ");
-    if (!name) return conn.sendMessage(m.chat, { text: `Uso: .doro friends <nombre>` }, { quoted: m });
-    const d = findDoroByName(db, name);
-    if (!d) return conn.sendMessage(m.chat, { text: `No existe ${name}` }, { quoted: m });
-    const list = d.friends.length ? d.friends.map(f => `• ${f.name} (${formatMention(f.owner)})`).join("\n") : "—";
-    await conn.sendMessage(m.chat, { text: `Amigos de ${d.name}:\n${list}` }, { quoted: m });
-    return;
-  }
+    const isNight = peruHour >= 22 || peruHour < 6;
+    if (isNight && doro.lastSlept && (now.getTime() - doro.lastSlept > 12 * 60 * 60 * 1000)) {
+        doro.health = Math.max(0, doro.health - 30);
+        doro.happiness = Math.max(0, doro.happiness - 30);
+        conn.sendMessage(doro.owner, { text: `╭─❍「 ✦ MaycolPlus ✦ 」\n│\n├─ 「❀」¡Tu Doro ${doro.name} se desmayó por no dormir! Su salud y felicidad han bajado.\n│\n╰─✦` });
+        doro.lastSlept = now.getTime();
+        return true;
+    } else if (isNight && !doro.notifiedSleep) {
+        conn.sendMessage(doro.owner, { text: `╭─❍「 ✦ MaycolPlus ✦ 」\n│\n├─ 「❀」Ya es de noche en Perú. ¡Tu Doro ${doro.name} debería ir a dormir!\n│\n╰─✦` });
+        doro.notifiedSleep = true;
+        return true;
+    } else if (!isNight) {
+        if (doro.notifiedSleep) {
+            doro.notifiedSleep = false;
+            return true;
+        }
+    }
+    return false;
+};
 
-  if (sub === "top") {
-    const sorted = db.slice().sort((a,b) => (b.stats.health + b.stats.happiness) - (a.stats.health + a.stats.happiness)).slice(0,10);
-    const lines = sorted.map((d,i) => `${i+1}. ${d.name} (${formatMention(d.owner)}) - Salud:${d.stats.health} Felicidad:${d.stats.happiness}`);
-    await conn.sendMessage(m.chat, { text: `Top mascotas:\n${lines.join("\n")}` }, { quoted: m });
-    return;
-  }
+const handler = async (m, { conn, text }) => {
+  const args = text.trim().split(' ');
+  const subCommand = args.shift().toLowerCase();
+  const user = m.sender;
 
-  if (sub === "events") {
-    const name = args.join(" ");
-    if (!name) return conn.sendMessage(m.chat, { text: `Uso: .doro events <nombre>` }, { quoted: m });
-    const d = findDoroByName(db, name);
-    if (!d) return conn.sendMessage(m.chat, { text: `No existe ${name}` }, { quoted: m });
-    const logs = d.logs.slice(0,10).map(l => `${l.at.split("T")[0]} - ${l.text}`).join("\n") || "—";
-    await conn.sendMessage(m.chat, { text: `Últimos sucesos de ${d.name}:\n${logs}` }, { quoted: m });
-    return;
-  }
+  let dorosDb = await readDb();
+  let doroIndex = dorosDb.findIndex(doro => doro.owner === user);
+  let userDoro = doroIndex !== -1 ? dorosDb[doroIndex] : null;
 
-  if (sub === "help" || sub === "ayuda") {
-    const textHelp = `Comandos Doro:
-.doro create <nombre>
-.doro profile <nombre>
-.doro feed <nombre>
-.doro sleep <nombre>
-.doro play <nombre>
-.doro addfriend <nombre_otro>
-.doro accept <tu_nombre> @dueño_del_otro
-.doro friends <nombre>
-.doro achievements <nombre>
-.doro events <nombre>
-.doro top
-Nota: El nombre de la mascota debe ser único.`;
-    return conn.sendMessage(m.chat, { text: textHelp }, { quoted: m });
-  }
-
-  // Si no coincide ningún subcomando, usamos interacción general y posible evento aleatorio
-  const globalDoro = db.find(x => x.owner === from);
-  if (!globalDoro) return conn.sendMessage(m.chat, { text: `Tienes que tener un Doro para usar comandos generales. Crea uno: .doro create <nombre>` }, { quoted: m });
-
-  // Evento nocturno: si es noche (23-6) y el doro no durmió -> advertencia, si se ignora se desmaya
-  const hour = nowPeru().getHours();
-  if (hour >= 23 || hour <= 6) {
-    const lastSleepOk = globalDoro.lastSleep ? (new Date(globalDoro.lastSleep).getTime() > Date.now() - 1000*60*60*6) : false;
-    if (!lastSleepOk) {
-      if (!globalDoro.__warnedAt || (Date.now() - globalDoro.__warnedAt > 1000*60*30)) {
-        globalDoro.__warnedAt = Date.now();
-        addLog(globalDoro, `Se le advirtió al dueño que es de noche.`);
-        saveDB(db);
-        await conn.sendMessage(m.chat, { text: `╭─❍「 ✦ MaycolPlus ✦ 」\n├─ ${globalDoro.name} debería dormir (es de noche en Perú). Si no duerme, puede desmayarse.\n╰─✦` }, { quoted: m });
-        return;
-      } else {
-        // si ya avisado y aún no duerme -> se desmaya
-        globalDoro.stats.energy = 5;
-        globalDoro.stats.health = clamp(globalDoro.stats.health - 30, 0, 100);
-        addLog(globalDoro, `${globalDoro.name} se desmayó por falta de sueño.`);
-        saveDB(db);
-        await conn.sendMessage(m.chat, { image: { url: ACTION_IMAGES.fall }, caption: `╭─❍「 ✦ MaycolPlus ✦ 」\n├─ ${globalDoro.name} se desmayó 😵\n├─ Salud muy baja: ${globalDoro.stats.health}\n╰─✦` }, { quoted: m });
-        return;
+  if (userDoro && subCommand !== 'crear') {
+      const eventsChanged = handleRandomEvents(userDoro, conn);
+      const timeChanged = handleTimeBasedActions(userDoro, conn);
+      const achievementsChanged = checkAchievements(userDoro, conn);
+      const levelUpChanged = checkLevelUp(userDoro, conn);
+      if (eventsChanged || timeChanged || achievementsChanged || levelUpChanged) {
+          dorosDb[doroIndex] = userDoro;
+          await saveDb(dorosDb);
       }
-    }
   }
 
-  // Sucesos aleatorios cada interacción (pequeña chance)
-  let triggered = false;
-  if (randomChance(0.12)) {
-    const eventRoll = Math.random();
-    if (eventRoll < 0.25) {
-      globalDoro.stats.happiness = clamp(globalDoro.stats.happiness + 10, 0, 100);
-      addLog(globalDoro, `Tu Doro encontró un amiguito en el parque.`);
-      saveDB(db);
-      await conn.sendMessage(m.chat, { image: { url: ACTION_IMAGES.friend }, caption: `╭─❍「 ✦ Evento ✦ 」\n├─ ${globalDoro.name} se hizo un nuevo amigo 😺\n╰─✦` }, { quoted: m });
-      triggered = true;
-    } else if (eventRoll < 0.5) {
-      globalDoro.stats.hunger = clamp(globalDoro.stats.hunger + 20, 0, 100);
-      addLog(globalDoro, `Comió un snack y ahora tiene hambre otra vez.`);
-      saveDB(db);
-      await conn.sendMessage(m.chat, { image: { url: ACTION_IMAGES.eating }, caption: `╭─❍「 ✦ Evento ✦ 」\n├─ ${globalDoro.name} encontró comida 🍟\n╰─✦` }, { quoted: m });
-      triggered = true;
-    } else if (eventRoll < 0.75) {
-      globalDoro.stats.health = clamp(globalDoro.stats.health - 10, 0, 100);
-      addLog(globalDoro, `Se tropezó y se lastimó un poco.`);
-      saveDB(db);
-      await conn.sendMessage(m.chat, { image: { url: ACTION_IMAGES.fall }, caption: `╭─❍「 ✦ Evento ✦ 」\n├─ ${globalDoro.name} se tropezó 😅\n├─ Salud: ${globalDoro.stats.health}\n╰─✦` }, { quoted: m });
-      triggered = true;
-    } else {
-      globalDoro.stats.happiness = clamp(globalDoro.stats.happiness - 10, 0, 100);
-      addLog(globalDoro, `Se peleó con otra mascota y está molesta.`);
-      saveDB(db);
-      await conn.sendMessage(m.chat, { image: { url: ACTION_IMAGES.annoying }, caption: `╭─❍「 ✦ Evento ✦ 」\n├─ ${globalDoro.name} se peleó con otra mascota 😤\n╰─✦` }, { quoted: m });
-      triggered = true;
-    }
+  if (subCommand === 'crear') {
+    if (userDoro) return m.reply('╭─❍「 ✦ MaycolPlus ✦ 」\n│\n├─ 「❀」¡Ya tienes un Doro!\n│\n╰─✦');
+    const doroName = args.join(' ');
+    if (!doroName) return m.reply('╭─❍「 ✦ MaycolPlus ✦ 」\n│\n├─ 「❀」Debes proporcionar un nombre. Ejemplo: `doro crear MiDoro`\n│\n╰─✦');
+    if (dorosDb.some(doro => doro.name.toLowerCase() === doroName.toLowerCase())) return m.reply('╭─❍「 ✦ MaycolPlus ✦ 」\n│\n├─ 「❀」Ese nombre ya está en uso.\n│\n╰─✦');
+    const newDoro = {
+      name: doroName, owner: user, health: 100, happiness: 100, xp: 0, level: 1,
+      friends: [], friendRequests: [], achievements: [],
+      lastSlept: null, lastFed: null, lastPlayed: null, isSick: false, notifiedSleep: false,
+    };
+    dorosDb.push(newDoro);
+    await saveDb(dorosDb);
+    return m.reply(`╭─❍「 ✦ MaycolPlus ✦ 」\n│\n├─ 「❀」¡Felicidades! Has adoptado un Doro llamado ${doroName}.\n│\n╰─✦`);
   }
 
-  if (!triggered) {
-    // Interacción por defecto: resumen rápido de estado
-    addLog(globalDoro, `${userTag} revisó a ${globalDoro.name}`);
-    saveDB(db);
-    await conn.sendMessage(m.chat, { text: `╭─❍「 ✦ Estado rapido ✦ 」\n├─ ${globalDoro.name}\n├─ Salud: ${globalDoro.stats.health}\n├─ Hambre: ${globalDoro.stats.hunger}\n├─ Energía: ${globalDoro.stats.energy}\n├─ Felicidad: ${globalDoro.stats.happiness}\n╰─✦` }, { quoted: m });
+  if (!userDoro) return m.reply('╭─❍「 ✦ MaycolPlus ✦ 」\n│\n├─ 「❀」No tienes un Doro. Usa `doro crear <nombre>`.\n│\n╰─✦');
+
+  let needsSave = false;
+
+  switch (subCommand) {
+    case 'perfil':
+      const profileMsg = `
+╭─❍「 ✦ Perfil de ${userDoro.name} ✦ 」
+├─ 💖 Salud: ${userDoro.health}/100 ${userDoro.isSick ? '(Enfermo 🤒)' : ''}
+├─ 😊 Felicidad: ${userDoro.happiness}/100
+├─ ✨ XP: ${userDoro.xp}/${userDoro.level * XP_PER_LEVEL}
+├─ 🏆 Nivel: ${userDoro.level}
+├─ 👤 Dueño: @${userDoro.owner.split('@')[0]}
+╰─✦`.trim();
+      conn.sendMessage(m.chat, { text: profileMsg, mentions: [userDoro.owner] }, { quoted: m });
+      break;
+
+    case 'alimentar':
+      if (Date.now() - (userDoro.lastFed || 0) < COOLDOWN) return m.reply('╭─❍「 ✦ MaycolPlus ✦ 」\n│\n├─ 「❀」Tu Doro todavía está lleno.\n│\n╰─✦');
+      userDoro.health = Math.min(100, userDoro.health + 10);
+      userDoro.happiness = Math.min(100, userDoro.happiness + 5);
+      userDoro.xp += 5;
+      userDoro.lastFed = Date.now();
+      needsSave = true;
+      conn.sendMessage(m.chat, { image: { url: getRandomImage('eating') }, caption: `╭─❍「 ✦ MaycolPlus ✦ 」\n│\n├─ 「❀」¡Ñam! ${userDoro.name} ha comido. 💖\n│\n╰─✦` }, { quoted: m });
+      break;
+
+    case 'jugar':
+      if (Date.now() - (userDoro.lastPlayed || 0) < COOLDOWN) return m.reply('╭─❍「 ✦ MaycolPlus ✦ 」\n│\n├─ 「❀」Tu Doro está cansado.\n│\n╰─✦');
+      userDoro.happiness = Math.min(100, userDoro.happiness + 15);
+      userDoro.health = Math.max(0, userDoro.health - 5);
+      userDoro.xp += 10;
+      userDoro.lastPlayed = Date.now();
+      needsSave = true;
+      conn.sendMessage(m.chat, { image: { url: getRandomImage('playing') }, caption: `╭─❍「 ✦ MaycolPlus ✦ 」\n│\n├─ 「❀」¡Wiii! ${userDoro.name} se divirtió. 😊\n│\n╰─✦` }, { quoted: m });
+      break;
+
+    case 'dormir':
+      if (Date.now() - (userDoro.lastSlept || 0) < COOLDOWN * 2) return m.reply('╭─❍「 ✦ MaycolPlus ✦ 」\n│\n├─ 「❀」Tu Doro no tiene sueño.\n│\n╰─✦');
+      userDoro.health = 100;
+      userDoro.isSick = false;
+      userDoro.lastSlept = Date.now();
+      needsSave = true;
+      conn.sendMessage(m.chat, { image: { url: getRandomImage('sleeping') }, caption: `╭─❍「 ✦ MaycolPlus ✦ 」\n│\n├─ 「❀」Shhh... ${userDoro.name} se ha dormido. 😴💤\n│\n╰─✦` }, { quoted: m });
+      break;
+
+    case 'curar':
+      if (!userDoro.isSick) return m.reply('╭─❍「 ✦ MaycolPlus ✦ 」\n│\n├─ 「❀」Tu Doro no está enfermo.\n│\n╰─✦');
+      userDoro.health = Math.min(100, userDoro.health + 30);
+      userDoro.isSick = false;
+      needsSave = true;
+      m.reply(`╭─❍「 ✦ MaycolPlus ✦ 」\n│\n├─ 「❀」Le has dado medicina a ${userDoro.name} y se siente mejor.\n│\n╰─✦`);
+      break;
+
+    case 'agregar-amigo': {
+      const friendName = args.join(' ');
+      if (!friendName) return m.reply('╭─❍「 ✦ MaycolPlus ✦ 」\n│\n├─ 「❀」Especifica el nombre del Doro amigo.\n│\n╰─✦');
+      const friendDoroIndex = dorosDb.findIndex(d => d.name.toLowerCase() === friendName.toLowerCase());
+      const friendDoro = friendDoroIndex !== -1 ? dorosDb[friendDoroIndex] : null;
+      if (!friendDoro) return m.reply(`╭─❍「 ✦ MaycolPlus ✦ 」\n│\n├─ 「❀」No se encontró un Doro llamado ${friendName}.\n│\n╰─✦`);
+      if (friendDoro.owner === user) return m.reply('╭─❍「 ✦ MaycolPlus ✦ 」\n│\n├─ 「❀」No puedes agregarte a ti mismo.\n│\n╰─✦');
+      if (userDoro.friends.includes(friendDoro.owner)) return m.reply(`╭─❍「 ✦ MaycolPlus ✦ 」\n│\n├─ 「❀」Ya eres amigo de ${friendName}.\n│\n╰─✦`);
+      if (friendDoro.friendRequests && friendDoro.friendRequests.includes(userDoro.owner)) return m.reply(`╭─❍「 ✦ MaycolPlus ✦ 」\n│\n├─ 「❀」Ya enviaste una solicitud a ${friendName}.\n│\n╰─✦`);
+      if (!friendDoro.friendRequests) friendDoro.friendRequests = [];
+      friendDoro.friendRequests.push(userDoro.owner);
+      dorosDb[friendDoroIndex] = friendDoro;
+      needsSave = true;
+      m.reply(`╭─❍「 ✦ MaycolPlus ✦ 」\n│\n├─ 「❀」Solicitud de amistad enviada a ${friendName}.\n│\n╰─✦`);
+      conn.sendMessage(friendDoro.owner, { text: `╭─❍「 ✦ MaycolPlus ✦ 」\n│\n├─ 「❀」¡${userDoro.name} quiere ser tu amigo! Usa \`doro aceptar-amigo ${userDoro.name}\`.\n│\n╰─✦`});
+      break;
+    }
+
+    case 'aceptar-amigo': {
+      const requesterName = args.join(' ');
+      if (!requesterName) return m.reply('╭─❍「 ✦ MaycolPlus ✦ 」\n│\n├─ 「❀」Especifica el nombre del Doro.\n│\n╰─✦');
+      const requesterDoroIndex = dorosDb.findIndex(d => d.name.toLowerCase() === requesterName.toLowerCase());
+      const requesterDoro = requesterDoroIndex !== -1 ? dorosDb[requesterDoroIndex] : null;
+      if (!requesterDoro) return m.reply(`╭─❍「 ✦ MaycolPlus ✦ 」\n│\n├─ 「❀」No se encontró un Doro llamado ${requesterName}.\n│\n╰─✦`);
+      if (!userDoro.friendRequests || !userDoro.friendRequests.includes(requesterDoro.owner)) return m.reply(`╭─❍「 ✦ MaycolPlus ✦ 」\n│\n├─ 「❀」No tienes solicitud de ${requesterName}.\n│\n╰─✦`);
+      userDoro.friendRequests = userDoro.friendRequests.filter(owner => owner !== requesterDoro.owner);
+      userDoro.friends.push(requesterDoro.owner);
+      requesterDoro.friends.push(userDoro.owner);
+      needsSave = true;
+      conn.sendMessage(m.chat, { image: { url: getRandomImage('new_friend') }, caption: `╭─❍「 ✦ MaycolPlus ✦ 」\n│\n├─ 「❀」¡Ahora eres amigo de ${requesterName}! 🎉\n│\n╰─✦` }, { quoted: m });
+      conn.sendMessage(requesterDoro.owner, { text: `╭─❍「 ✦ MaycolPlus ✦ 」\n│\n├─ 「❀」¡${userDoro.name} aceptó tu solicitud!\n│\n╰─✦` });
+      break;
+    }
+
+    case 'amigos':
+      if (userDoro.friends.length === 0) return m.reply('╭─❍「 ✦ MaycolPlus ✦ 」\n│\n├─ 「❀」Aún no tienes amigos.\n│\n╰─✦');
+      const friendNames = userDoro.friends.map(owner => dorosDb.find(d => d.owner === owner)?.name || 'Desconocido');
+      m.reply(`╭─❍「 ✦ MaycolPlus ✦ 」\n│\n├─ 「❀」Tus amigos: ${friendNames.join(', ')}\n│\n╰─✦`);
+      break;
+
+    case 'top':
+      const sortedDoros = [...dorosDb].sort((a, b) => b.xp - a.xp).slice(0, 10);
+      let topMsg = '╭─❍「 ✦ Top 10 Doros con más XP ✦ 」\n\n';
+      sortedDoros.forEach((d, index) => { topMsg += `├─ ${index + 1}. ${d.name} (@${d.owner.split('@')[0]}) - ${d.xp} XP\n`; });
+      topMsg += '\n╰─✦';
+      conn.sendMessage(m.chat, { text: topMsg, mentions: sortedDoros.map(d => d.owner) }, { quoted: m });
+      break;
+
+    case 'logros':
+      if (userDoro.achievements.length === 0) return m.reply('╭─❍「 ✦ MaycolPlus ✦ 」\n│\n├─ 「❀」No has ganado ningún logro.\n│\n╰─✦');
+      let achievementsMsg = '╭─❍「 ✦ Logros Desbloqueados ✦ 」\n\n';
+      userDoro.achievements.forEach(ach => { achievementsMsg += `├─ ${achievements[ach].name}: ${achievements[ach].description}\n`; });
+      achievementsMsg += '\n╰─✦';
+      m.reply(achievementsMsg);
+      break;
+
+    default:
+      m.reply(
+`╭─❍「 ✦ Comandos de Doro ✦ 」
+│
+├─ doro crear <nombre>
+├─ doro perfil
+├─ doro alimentar, jugar, dormir, curar
+├─ doro agregar-amigo <nombre>
+├─ doro aceptar-amigo <nombre>
+├─ doro amigos, top, logros
+│
+╰─✦`
+      );
+  }
+
+  if (needsSave) {
+    if (checkLevelUp(userDoro, conn)) {
+        // userDoro object is modified by checkLevelUp, so we just need to save.
+    }
+    dorosDb[doroIndex] = userDoro;
+    await saveDb(dorosDb);
   }
 };
 
-handler.command = ["doro"];
-handler.help = ["doro <subcomando>"];
+handler.command = ["doro", "cuidadoro"];
+handler.help = ["doro crear <nombre>", "doro perfil", "doro alimentar", "doro jugar", "doro dormir", "doro curar", "doro agregar-amigo <nombre>", "doro aceptar-amigo <nombre>", "doro amigos", "doro top", "doro logros"];
 handler.tags = ["diversion"];
 handler.register = true;
 
