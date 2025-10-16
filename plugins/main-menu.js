@@ -1,3 +1,5 @@
+// ♥ 𝙼𝚎𝚗𝚞 𝚍𝚎 𝚂𝚘𝚢𝙼𝚊𝚢𝚌𝚘𝚕 ♥
+// ᵁˢᵃ ᵉˢᵗᵉ ᶜᵒᵈⁱᵍᵒ ˢⁱᵉᵐᵖʳᵉ ᶜᵒⁿ ᶜʳᵉᵈⁱᵗᵒˢ
 import fs from 'fs'
 
 let handler = async (m, { conn, args }) => {
@@ -8,6 +10,7 @@ let handler = async (m, { conn, args }) => {
   let uptime = clockString(_uptime)
   let totalreg = Object.keys(global.db.data.users).length
 
+  // Saludo decorado
   let hour = new Intl.DateTimeFormat('es-PE', {
     hour: 'numeric',
     hour12: false,
@@ -23,6 +26,7 @@ let handler = async (m, { conn, args }) => {
              hour < 23 ? "🌃 Buenas noches... que los espíritus te cuiden 🌙" :
              "🌑 Es medianoche... los fantasmas susurran en la oscuridad 👀"
 
+  // Agrupar comandos por categorías
   let categories = {}
   for (let plugin of Object.values(global.plugins)) {
     if (!plugin.help || !plugin.tags) continue
@@ -32,6 +36,7 @@ let handler = async (m, { conn, args }) => {
     }
   }
 
+  // Emojis random por categoría
   let decoEmojis = ['🌙', '👻', '🪄', '🏮', '📜', '💫', '😈', '🍡', '🔮', '🌸', '🪦', '✨']
   let emojiRandom = () => decoEmojis[Math.floor(Math.random() * decoEmojis.length)]
 
@@ -60,18 +65,12 @@ ${cmds.map(cmd => `│ ▪️ ${cmd}`).join('\n')}
 ╰─━━━━━━━━━━━╯`
   }
 
-  // Botones
-  let buttons = [
-    { buttonId: '.code', buttonText: { displayText: '[ ★ ] Ser Bot' }, type: 1 },
-    { buttonId: '.creador', buttonText: { displayText: '[ ★ ] Creador' }, type: 1 }
-  ]
-
-  // Enviar menú con video y botones
+  // Enviar menú con video estilo gif
   await conn.sendMessage(m.chat, {
     video: fs.readFileSync('./storage/videos/lv_0_20251012222157.mp4'),
     gifPlayback: true,
     caption: menuText,
-    buttons: buttons,
+    gifPlayback: true,
     contextInfo: {
       mentionedJid: [m.sender, userId],
       isForwarded: true,
