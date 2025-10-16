@@ -5,9 +5,10 @@ const doroImages = [
   { action: "sleeping", url: "https://raw.githubusercontent.com/SoySapo6/tmp/refs/heads/main/Permanentes/doro%20durmiendo.jpg" },
   { action: "playing", url: "https://raw.githubusercontent.com/SoySapo6/tmp/refs/heads/main/Permanentes/doro%20con%20el%20celular.jpeg" },
   { action: "new_friend", url: "https://raw.githubusercontent.com/SoySapo6/tmp/refs/heads/main/Permanentes/Doro%20haciendo%20un%20amigo.jpeg" },
-  { action: "fallen", url: "https://files.catbox.moe/4hrurl.png" },
-  { action: "annoying", url: "https://raw.githubusercontent.com/SoySapo6/tmp/refs/heads/main/Permanentes/las%20mascotas%20de%20otros%20molestos%20contigo.jpeg" },
-  { action: "sick", url: "https://raw.githubusercontent.com/SoySapo6/tmp/refs/heads/main/Permanentes/Doro%20Cay%C3%A9ndose%20en%20el%20Piso.jpeg"}
+  { action: "fallen", url: "https://raw.githubusercontent.com/SoySapo6/tmp/refs/heads/main/Permanentes/Doro%20Cay%C3%A9ndose%20en%20el%20Piso.jpeg" }, // For fainting
+  { action: "sick", url: "https://raw.githubusercontent.com/SoySapo6/tmp/refs/heads/main/Permanentes/doro%20enfermo.jpeg" },
+  { action: "adventure", url: "https://raw.githubusercontent.com/SoySapo6/tmp/refs/heads/main/Permanentes/doro%20aventura.jpeg" },
+  { action: "thanks", url: "https://raw.githubusercontent.com/SoySapo6/tmp/refs/heads/main/Permanentes/doro%20gracias.jpeg" }
 ];
 
 const dbPath = './database/doros.json';
@@ -16,6 +17,8 @@ const SLEEP_DURATION = 2 * 60 * 60 * 1000;
 const XP_PER_LEVEL = 100;
 
 const achievements = {
+  "first_friend": { name: "Primer Amigo", description: "Haz tu primer amigo.", goal: 1 },
+  "level_10": { name: "Nivel 10", description: "Alcanza el nivel 10.", goal: 10 },
   "social_butterfly": { name: "Mariposa Social", description: "Consigue 10 amigos.", goal: 10 },
   "xp_master": { name: "Maestro de XP", description: "Alcanza 1000 XP.", goal: 1000 }
 };
@@ -23,12 +26,14 @@ const achievements = {
 const missions = {
     "play_5": { name: "¡A Jugar!", description: "Juega con tu Doro 5 veces.", goal: 5, reward: 50, type: 'jugar' },
     "eat_10": { name: "Buen Provecho", description: "Alimenta a tu Doro 10 veces.", goal: 10, reward: 50, type: 'alimentar' },
-    "friend_1": { name: "Nuevo Amigo", description: "Haz un nuevo amigo.", goal: 1, reward: 100, type: 'aceptar-amigo' }
+    "friend_1": { name: "Nuevo Amigo", description: "Haz un nuevo amigo.", goal: 1, reward: 100, type: 'aceptar-amigo' },
+    "cure_3": { name: "Doctor Doro", description: "Cura a tu Doro 3 veces.", goal: 3, reward: 75, type: 'curar' },
+    "adventure_5": { name: "Aventurero", description: "Ve de aventura 5 veces.", goal: 5, reward: 75, type: 'aventura' }
 };
 
 const getRandomImage = (action) => {
   const images = doroImages.filter(img => img.action === action);
-  if (images.length === 0) return doroImages.find(img => img.action === 'fallen').url;
+  if (images.length === 0) return null;
   return images[Math.floor(Math.random() * images.length)].url;
 };
 
@@ -51,9 +56,7 @@ const checkLevelUp = (doro) => {
     let changed = false;
     while (doro.xp >= doro.level * XP_PER_LEVEL) {
         doro.level++;
-        doro.health = 100;
-        doro.happiness = 100;
-        notifications.push(`「❀」¡Felicidades! Tu Doro ${doro.name} ha subido al nivel ${doro.level}.`);
+        notifications.push({ text: `「❀」¡Felicidades! Tu Doro ${doro.name} ha subido al nivel ${doro.level}.` });
         changed = true;
     }
     return { changed, notifications };
@@ -62,31 +65,31 @@ const checkLevelUp = (doro) => {
 const checkAchievements = (doro) => {
   let notifications = [];
   let changed = false;
-  if (doro.friends.length >= achievements.social_butterfly.goal && !doro.achievements.includes("social_butterfly")) {
-    doro.achievements.push("social_butterfly");
-    notifications.push(`「❀」¡Tu Doro ${doro.name} ha ganado el logro "${achievements.social_butterfly.name}"!`);
-    changed = true;
+  if (doro.friends.length >= 1 && !doro.achievements.includes("first_friend")) {
+      doro.achievements.push("first_friend");
+      notifications.push({ text: `「❀」¡Logro desbloqueado: ${achievements.first_friend.name}!` });
+      changed = true;
   }
-  if (doro.xp >= achievements.xp_master.goal && !doro.achievements.includes("xp_master")) {
-    doro.achievements.push("xp_master");
-    notifications.push(`「❀」¡Tu Doro ${doro.name} ha ganado el logro "${achievements.xp_master.name}"!`);
-    changed = true;
+  if (doro.level >= 10 && !doro.achievements.includes("level_10")) {
+      doro.achievements.push("level_10");
+      notifications.push({ text: `「❀」¡Logro desbloqueado: ${achievements.level_10.name}!` });
+      changed = true;
   }
   return { changed, notifications };
 };
 
-const handleRandomEvents = (doro) => {
+const handleRandomEvents = (doro, currentCommand) => {
     let notifications = [];
     let changed = false;
     const chance = Math.random();
-    if (chance < 0.1) {
+    if (chance < 0.1 && currentCommand !== 'curar' && !doro.isSick) {
         doro.health = Math.max(0, doro.health - 20);
         doro.isSick = true;
-        notifications.push(`「❀」¡Oh no! Tu Doro ${doro.name} se ha enfermado. Usa \`doro curar\` para sanarlo.`);
+        notifications.push({ text: `「❀」¡Oh no! Tu Doro ${doro.name} se ha enfermado.`, image: getRandomImage('sick') });
         changed = true;
     } else if (chance < 0.2) {
         doro.xp += 20;
-        notifications.push(`「❀」¡Qué suerte! Tu Doro ${doro.name} encontró 20 XP.`);
+        notifications.push({ text: `「❀」¡Qué suerte! Tu Doro ${doro.name} encontró 20 XP.` });
         changed = true;
     }
     return { changed, notifications };
@@ -96,18 +99,15 @@ const handleTimeBasedActions = (doro) => {
     let notifications = [];
     let changed = false;
     const now = new Date();
-    const peruTime = new Date(now.toLocaleString('en-US', { timeZone: 'America/Lima' }));
-    const peruHour = peruTime.getHours();
+    const isNight = new Date(now.toLocaleString('en-US', { timeZone: 'America/Lima' })).getHours() >= 22 || new Date(now.toLocaleString('en-US', { timeZone: 'America/Lima' })).getHours() < 6;
 
-    const isNight = peruHour >= 22 || peruHour < 6;
-    if (isNight && doro.lastSlept && (now.getTime() - doro.lastSlept > 12 * 60 * 60 * 1000)) {
+    if (isNight && doro.lastSlept && (now.getTime() - doro.lastSlept > 12 * 60 * 60 * 1000) && !(doro.lastSlept && (Date.now() - doro.lastSlept < SLEEP_DURATION))) {
         doro.health = Math.max(0, doro.health - 30);
-        doro.happiness = Math.max(0, doro.happiness - 30);
-        notifications.push(`「❀」¡Tu Doro ${doro.name} se desmayó por no dormir!`);
+        notifications.push({ text: `「❀」¡Tu Doro ${doro.name} se desmayó por no dormir!`, image: getRandomImage('fallen') });
         doro.lastSlept = now.getTime();
         changed = true;
     } else if (isNight && !doro.notifiedSleep) {
-        notifications.push(`「❀」Ya es de noche en Perú. Tu Doro ${doro.name} debería ir a dormir.`);
+        notifications.push({ text: `「❀」Ya es de noche en Perú. Tu Doro ${doro.name} debería ir a dormir.` });
         doro.notifiedSleep = true;
         changed = true;
     } else if (!isNight && doro.notifiedSleep) {
@@ -120,15 +120,15 @@ const handleTimeBasedActions = (doro) => {
 const checkMissions = (doro, actionType) => {
     let notifications = [];
     let changed = false;
-    for (const missionKey in missions) {
-        const mission = missions[missionKey];
-        if (mission.type === actionType && !doro.completedMissions.includes(missionKey)) {
-            doro.missions[missionKey] = (doro.missions[missionKey] || 0) + 1;
+    for (const key in missions) {
+        const mission = missions[key];
+        if (mission.type === actionType && !doro.completedMissions.includes(key)) {
+            doro.missions[key] = (doro.missions[key] || 0) + 1;
             changed = true;
-            if (doro.missions[missionKey] >= mission.goal) {
+            if (doro.missions[key] >= mission.goal) {
                 doro.xp += mission.reward;
-                doro.completedMissions.push(missionKey);
-                notifications.push(`「❀」¡Misión Cumplida: ${mission.name}! Has ganado ${mission.reward} XP.`);
+                doro.completedMissions.push(key);
+                notifications.push({ text: `「❀」¡Misión Cumplida: ${mission.name}! (+${mission.reward} XP)` });
             }
         }
     }
@@ -138,7 +138,6 @@ const checkMissions = (doro, actionType) => {
 const getProfileText = (doro) => {
     const isSleeping = doro.lastSlept && (Date.now() - doro.lastSlept < SLEEP_DURATION);
     const wakeUpTime = new Date(doro.lastSlept + SLEEP_DURATION);
-
     return `
 ├─ 💖 Salud: ${doro.health}/100 ${doro.isSick ? '(Enfermo 🤒)' : ''}
 ├─ 😊 Felicidad: ${doro.happiness}/100
@@ -158,29 +157,18 @@ const handler = async (m, { conn, text }) => {
     let doroIndex = dorosDb.findIndex(doro => doro.owner === user);
     let userDoro = doroIndex !== -1 ? dorosDb[doroIndex] : null;
 
-    const formatMessage = (mainContent, notifications = []) => {
-        let message = "╭─❍「 ✦ MaycolPlus ✦ 」\n";
-        notifications.forEach(notif => message += `│\n├─ ${notif}\n`);
-        message += `│\n├─ ${mainContent}\n│\n╰─✦`;
-        return message;
-    };
-
     if (subCommand === 'crear') {
-        if (userDoro) return m.reply(formatMessage('¡Ya tienes un Doro!'));
+        if (userDoro) return m.reply('╭─❍「 ✦ MaycolPlus ✦ 」\n│\n├─ ¡Ya tienes un Doro!\n│\n╰─✦');
         const doroName = args.slice(1).join(' ');
-        if (!doroName) return m.reply(formatMessage('Debes dar un nombre. Ejemplo: `doro crear MiDoro`'));
-        if (dorosDb.some(doro => doro.name.toLowerCase() === doroName.toLowerCase())) return m.reply(formatMessage('Ese nombre ya está en uso.'));
-        const newDoro = {
-            name: doroName, owner: user, health: 100, happiness: 100, xp: 0, level: 1,
-            friends: [], friendRequests: [], achievements: [], missions: {}, completedMissions: [],
-            lastSlept: null, lastFed: null, lastPlayed: null, isSick: false, notifiedSleep: false,
-        };
+        if (!doroName) return m.reply('╭─❍「 ✦ MaycolPlus ✦ 」\n│\n├─ Debes dar un nombre. Ejemplo: `doro crear MiDoro`\n│\n╰─✦');
+        if (dorosDb.some(d => d.name.toLowerCase() === doroName.toLowerCase())) return m.reply('╭─❍「 ✦ MaycolPlus ✦ 」\n│\n├─ Ese nombre ya está en uso.\n│\n╰─✦');
+        const newDoro = { name: doroName, owner: user, health: 100, happiness: 100, xp: 0, level: 1, friends: [], friendRequests: [], achievements: [], missions: {}, completedMissions: [], lastSlept: null, lastFed: null, lastPlayed: null, isSick: false, notifiedSleep: false };
         dorosDb.push(newDoro);
         await saveDb(dorosDb);
-        return m.reply(formatMessage(`¡Felicidades! Has adoptado a ${doroName}.`));
+        return m.reply(`╭─❍「 ✦ MaycolPlus ✦ 」\n│\n├─ ¡Felicidades! Has adoptado a ${doroName}.\n│\n╰─✦`);
     }
 
-    if (!userDoro) return m.reply(formatMessage('No tienes un Doro. Usa `doro crear <nombre>`.'));
+    if (!userDoro) return m.reply('╭─❍「 ✦ MaycolPlus ✦ 」\n│\n├─ No tienes un Doro. Usa `doro crear <nombre>`.\n│\n╰─✦');
     
     if (!userDoro.missions) userDoro.missions = {};
     if (!userDoro.completedMissions) userDoro.completedMissions = [];
@@ -190,12 +178,13 @@ const handler = async (m, { conn, text }) => {
       const helpText = `
 ╭─❍「 ✦ Perfil de ${userDoro.name} ✦ 」
 ${profileText}
+╰─✦
+
+╭─❍「 ✦ Comandos de Doro ✦ 」
 │
-├─❍「 ✦ Comandos de Doro ✦ 」
-│
-├─ doro crear <nombre>
 ├─ doro perfil <nombre>
 ├─ doro alimentar, jugar, dormir, curar
+├─ doro gracias, aventura
 ├─ doro misiones, amigos, top, logros
 │
 ╰─✦`.trim();
@@ -205,6 +194,7 @@ ${profileText}
     let mainResponse = '';
     let stateChangedByAction = false;
     let missionUpdate = { changed: false, notifications: [] };
+    let actionImage = null;
 
     switch (subCommand) {
         case 'alimentar':
@@ -215,30 +205,53 @@ ${profileText}
             stateChangedByAction = true;
             missionUpdate = checkMissions(userDoro, 'alimentar');
             mainResponse = `¡Ñam! ${userDoro.name} ha comido. 💖`;
+            actionImage = getRandomImage('eating');
             break;
         case 'jugar':
-            if (Date.now() - (userDoro.lastPlayed || 0) < COOLDOWN) { mainResponse = 'Tu Doro está cansado.'; break; }
+             if (Date.now() - (userDoro.lastPlayed || 0) < COOLDOWN) { mainResponse = 'Tu Doro está cansado.'; break; }
             userDoro.happiness = Math.min(100, userDoro.happiness + 15);
             userDoro.xp += 10;
             userDoro.lastPlayed = Date.now();
             stateChangedByAction = true;
             missionUpdate = checkMissions(userDoro, 'jugar');
             mainResponse = `¡Wiii! ${userDoro.name} se divirtió. 😊`;
+            actionImage = getRandomImage('playing');
             break;
         case 'dormir':
-            if (Date.now() - (userDoro.lastSlept || 0) < SLEEP_DURATION) { mainResponse = 'Tu Doro ya está durmiendo.'; break; }
+            if (userDoro.lastSlept && (Date.now() - userDoro.lastSlept < SLEEP_DURATION)) { mainResponse = 'Tu Doro ya está durmiendo.'; break; }
             userDoro.health = 100;
             userDoro.isSick = false;
             userDoro.lastSlept = Date.now();
             stateChangedByAction = true;
             mainResponse = `Shhh... ${userDoro.name} se ha dormido. 😴💤`;
+            actionImage = getRandomImage('sleeping');
             break;
         case 'curar':
             if (!userDoro.isSick) { mainResponse = 'Tu Doro no está enfermo.'; break; }
-            userDoro.health = Math.min(100, userDoro.health + 30);
+            userDoro.health = Math.min(100, userDoro.health + 50);
             userDoro.isSick = false;
             stateChangedByAction = true;
-            mainResponse = `Le has dado medicina a ${userDoro.name} y se siente mejor.`;
+            missionUpdate = checkMissions(userDoro, 'curar');
+            mainResponse = `Le has dado medicina a ${userDoro.name} y se siente mucho mejor.`;
+            break;
+         case 'gracias':
+            userDoro.happiness = Math.min(100, userDoro.happiness + 5);
+            stateChangedByAction = true;
+            mainResponse = `¡De nada, @${user.split('@')[0]}! Me alegra ser tu amigo. 💖`;
+            actionImage = getRandomImage('thanks');
+            break;
+        case 'aventura':
+            const adventureChance = Math.random();
+            if (adventureChance < 0.6) {
+                userDoro.xp += 30;
+                mainResponse = `¡Tu Doro fue de aventura y encontró un tesoro! Ganó 30 XP.`;
+            } else {
+                userDoro.happiness = Math.max(0, userDoro.happiness - 10);
+                mainResponse = `Tu Doro se perdió durante su aventura y está un poco triste.`;
+            }
+            stateChangedByAction = true;
+            missionUpdate = checkMissions(userDoro, 'aventura');
+            actionImage = getRandomImage('adventure');
             break;
         case 'agregar-amigo': {
             const friendName = args.slice(1).join(' ');
@@ -252,7 +265,7 @@ ${profileText}
             friendDoro.friendRequests.push(userDoro.owner);
             stateChangedByAction = true;
             mainResponse = `Solicitud de amistad enviada a ${friendName}.`;
-            conn.sendMessage(friendDoro.owner, { text: formatMessage(`¡${userDoro.name} quiere ser tu amigo! Usa \`doro aceptar-amigo ${userDoro.name}\`.`) });
+            conn.sendMessage(friendDoro.owner, { text: `╭─❍「 ✦ MaycolPlus ✦ 」\n│\n├─ ¡${userDoro.name} quiere ser tu amigo! Usa \`doro aceptar-amigo ${userDoro.name}\`.\n│\n╰─✦` });
             break;
         }
         case 'aceptar-amigo': {
@@ -265,12 +278,13 @@ ${profileText}
             stateChangedByAction = true;
             missionUpdate = checkMissions(userDoro, 'aceptar-amigo');
             mainResponse = `¡Ahora eres amigo de ${requesterName}! 🎉`;
-            conn.sendMessage(requesterDoro.owner, { text: formatMessage(`¡${userDoro.name} aceptó tu amistad!`) });
+            actionImage = getRandomImage('new_friend');
+            conn.sendMessage(requesterDoro.owner, { text: `╭─❍「 ✦ MaycolPlus ✦ 」\n│\n├─ ¡${userDoro.name} aceptó tu amistad!\n│\n╰─✦` });
             break;
         }
     }
 
-    const randomEvents = handleRandomEvents(userDoro);
+    const randomEvents = handleRandomEvents(userDoro, subCommand);
     const timeActions = handleTimeBasedActions(userDoro);
     const achievements = checkAchievements(userDoro);
     const levelUp = checkLevelUp(userDoro);
@@ -285,35 +299,41 @@ ${profileText}
     
     const sendFinalMessage = async (content, options = {}) => {
         const { image, mentions, isProfile, isList } = options;
-        let finalMessage;
+        let finalMessage = '';
+        let notificationText = '';
+        let imageToSend = image;
+
+        eventNotifications.forEach(notif => {
+            const notifText = (typeof notif === 'string') ? notif : notif.text;
+            notificationText += `│\n├─ ${notifText}\n`;
+            if (notif.image) imageToSend = notif.image;
+        });
+
         if (isProfile) finalMessage = `╭─❍「 ✦ Perfil de ${options.doroName} ✦ 」\n${content}\n╰─✦`;
         else if (isList) finalMessage = content;
-        else finalMessage = formatMessage(content, eventNotifications);
+        else finalMessage = `╭─❍「 ✦ MaycolPlus ✦ 」\n${notificationText}│\n├─ ${content}\n│\n╰─✦`;
         
-        if (image) await conn.sendMessage(m.chat, { image: { url: image }, caption: finalMessage, mentions: mentions || [] }, { quoted: m });
+        if (imageToSend) await conn.sendMessage(m.chat, { image: { url: imageToSend }, caption: finalMessage, mentions: mentions || [] }, { quoted: m });
         else await conn.sendMessage(m.chat, { text: finalMessage, mentions: mentions || [] }, { quoted: m });
     };
 
     switch (subCommand) {
         case 'perfil':
             const targetName = args.slice(1).join(' ');
-            if (!targetName) return m.reply(formatMessage('Especifica el nombre del Doro.', eventNotifications));
+            if (!targetName) return m.reply('╭─❍「 ✦ MaycolPlus ✦ 」\n│\n├─ Especifica el nombre del Doro.\n│\n╰─✦');
             const targetDoro = dorosDb.find(d => d.name.toLowerCase() === targetName.toLowerCase());
-            if (!targetDoro) return m.reply(formatMessage(`No se encontró a ${targetName}.`, eventNotifications));
+            if (!targetDoro) return m.reply(`╭─❍「 ✦ MaycolPlus ✦ 」\n│\n├─ No se encontró a ${targetName}.\n│\n╰─✦`);
             await sendFinalMessage(getProfileText(targetDoro), { isProfile: true, doroName: targetDoro.name, mentions: [targetDoro.owner] });
             break;
         case 'misiones':
             let missionsText = '╭─❍「 ✦ Misiones de Doro ✦ 」\n\n';
-            let hasMissions = false;
-            for (const key in missions) {
-                if (!userDoro.completedMissions.includes(key)) {
-                    hasMissions = true;
-                    const mission = missions[key];
-                    const progress = userDoro.missions[key] || 0;
-                    missionsText += `├─ ${mission.name}: ${mission.description} (${progress}/${mission.goal})\n`;
-                }
-            }
-            if (!hasMissions) missionsText += '├─ ¡No tienes misiones pendientes!\n';
+            const activeMissions = Object.keys(missions).filter(key => !userDoro.completedMissions.includes(key));
+            if (activeMissions.length === 0) missionsText += '├─ ¡No tienes misiones pendientes!\n';
+            else activeMissions.forEach(key => {
+                const mission = missions[key];
+                const progress = userDoro.missions[key] || 0;
+                missionsText += `├─ ${mission.name}: ${mission.description} (${progress}/${mission.goal})\n`;
+            });
             missionsText += '\n╰─✦';
             await sendFinalMessage(missionsText, { isList: true });
             break;
@@ -338,21 +358,24 @@ ${profileText}
             let achievementsMsg = '╭─❍「 ✦ Logros Desbloqueados ✦ 」\n\n';
             if (userDoro.achievements.length === 0) { achievementsMsg += '├─ No has ganado ningún logro.\n'; }
             else {
-                userDoro.achievements.forEach(ach => { achievementsMsg += `├─ ${achievements[ach].name}: ${achievements[ach].description}\n`; });
+                userDoro.achievements.forEach(achId => {
+                    const ach = achievements[achId];
+                    if(ach) achievementsMsg += `├─ ${ach.name}: ${ach.description}\n`;
+                });
             }
             achievementsMsg += '\n╰─✦';
             await sendFinalMessage(achievementsMsg, { isList: true });
             break;
         default:
             if (mainResponse) {
-                await sendFinalMessage(mainResponse, { image: subCommand.match(/alimentar|jugar|dormir|aceptar-amigo/) ? getRandomImage(subCommand.replace('-amigo', 'new_friend')) : null });
+                await sendFinalMessage(mainResponse, { image: actionImage, mentions: subCommand === 'gracias' ? [user] : [] });
             }
             break;
     }
 };
 
 handler.command = ["doro"];
-handler.help = ["doro", "doro crear <nombre>", "doro perfil <nombre>", "doro misiones", "doro alimentar", "doro jugar", "doro dormir", "doro curar", "doro agregar-amigo <nombre>", "doro aceptar-amigo <nombre>", "doro amigos", "doro top", "doro logros"];
+handler.help = ["doro", "doro crear <nombre>", "doro perfil <nombre>", "doro misiones", "doro alimentar", "doro jugar", "doro dormir", "doro curar", "doro gracias", "doro aventura", "doro agregar-amigo <nombre>", "doro aceptar-amigo <nombre>", "doro amigos", "doro top", "doro logros"];
 handler.tags = ["diversion"];
 handler.register = true;
 
