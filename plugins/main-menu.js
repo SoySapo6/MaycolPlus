@@ -62,30 +62,28 @@ ${cmds.map(cmd => `│ ▪️ ${cmd}`).join('\n')}
 
   // Botones
   let buttons = [
-  { buttonId: '.code', buttonText: { displayText: '[ ★ ] Ser Bot' }, type: 1 }
-]
+    { buttonId: '.code', buttonText: { displayText: '[ ★ ] Ser Bot' }, type: 1 },
+    { buttonId: '.creador', buttonText: { displayText: '[ ★ ] Creador' }, type: 1 }
+  ]
 
-let urlButtons = [
-  { displayText: '[ ★ ] Creador', url: 'https://SoyMaycol.is-a.dev' }
-]
-
-await conn.sendMessage(m.chat, {
-  video: fs.readFileSync('./storage/videos/lv_0_20251012222157.mp4'),
-  gifPlayback: true,
-  caption: menuText,
-  buttons: buttons,
-  urlButtons: urlButtons,
-  contextInfo: {
-    mentionedJid: [m.sender, userId],
-    isForwarded: true,
-    forwardedNewsletterMessageInfo: {
-      newsletterJid: '120363372883715167@newsletter',
-      newsletterName: '𝐒𝐨𝐲𝐌𝐚𝐲𝐜𝐨𝐥 <𝟑 • Actualizaciones',
-      serverMessageId: -1,
-    },
-    forwardingScore: 999
-  }
-}, { quoted: m })
+  // Enviar menú con video y botones
+  await conn.sendMessage(m.chat, {
+    video: fs.readFileSync('./storage/videos/lv_0_20251012222157.mp4'),
+    gifPlayback: true,
+    caption: menuText,
+    buttons: buttons,
+    contextInfo: {
+      mentionedJid: [m.sender, userId],
+      isForwarded: true,
+      forwardedNewsletterMessageInfo: {
+        newsletterJid: '120363372883715167@newsletter',
+        newsletterName: '𝐒𝐨𝐲𝐌𝐚𝐲𝐜𝐨𝐥 <𝟑 • Actualizaciones',
+        serverMessageId: -1,
+      },
+      forwardingScore: 999
+    }
+  }, { quoted: m })
+}
 
 handler.help = ['menu']
 handler.tags = ['main']
@@ -99,4 +97,4 @@ function clockString(ms) {
   let m = Math.floor(ms / 60000) % 60
   let s = Math.floor(ms / 1000) % 60
   return `${h}h ${m}m ${s}s`
-      }
+}
