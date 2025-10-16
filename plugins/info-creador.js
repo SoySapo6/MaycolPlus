@@ -2,8 +2,9 @@ let handler = async (m, { conn }) => {
   const name = 'SoyMaycol'
   const number = '51921826291'
   const email = 'soymaycol.cn@gmail.com'
-  const org = 'Programador de Webs,Bots y mas'
+  const org = 'Programador de Webs, Bots y más'
   const note = 'Tengo 12 años XD'
+  const portfolio = 'https://soymaycol.is-a.dev'
 
   const vcard = `
 BEGIN:VCARD
@@ -11,8 +12,9 @@ VERSION:3.0
 N:${name}
 FN:${name}
 ORG:${org}
-EMAIL;type=EMAIL:${email}
+EMAIL;type=INTERNET:${email}
 TEL;type=CELL;type=VOICE;waid=${number}:${number}
+URL:${portfolio}
 NOTE:${note}
 END:VCARD
 `.trim()
