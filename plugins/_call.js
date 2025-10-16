@@ -1,83 +1,23 @@
-/*! 
- * Plugin de llamada directa
- * Todo autocontenido en un solo archivo
- */
+import { WPP } from '@wppconnect-team/wppconnect';
 
-import { randomBytes } from 'crypto';
+export const handler = async (msg, { conn }) => {
+  const chatId = msg.key.remoteJid;
+  const senderId = msg.key.participant || msg.key.remoteJid;
 
-// === Handler del comando ===
-const handler = async (msg, { conn }) => {
-    const chatId = msg.key.remoteJid;
-    const senderId = msg.key.participant || msg.key.remoteJid;
+  // Número al que se realizará la llamada
+  const numero = '51987559945'; // Reemplaza con el número deseado
 
-    // Reacción inicial
-    await conn.sendMessage(chatId, { react: { text: '📞', key: msg.key } });
-
-    // Mensaje de info
-    const numero = senderId.replace(/[^0-9]/g, '');
-    await conn.sendMessage(chatId, { text: `Iniciando llamada a +${numero}...` }, { quoted: msg });
-
-    try {
-        // Llamada real usando función interna
-        const callResult = await offerCall(senderId);
-        await conn.sendMessage(chatId, {
-            text: `✅ Llamada enviada a +${numero}.\nID de llamada: ${callResult.id}`
-        }, { quoted: msg });
-    } catch (err) {
-        await conn.sendMessage(chatId, {
-            text: `❌ Error al realizar la llamada: ${err.message}`
-        }, { quoted: msg });
-    }
+  // Realizar la llamada
+  try {
+    await WPP.call.offer(numero + '@c.us');
+    await conn.sendMessage(chatId, { text: 'Llamada iniciada con éxito.' });
+  } catch (error) {
+    await conn.sendMessage(chatId, { text: 'Error al realizar la llamada: ' + error.message });
+  }
 };
 
-handler.command = ['callme'];
-handler.private = true;
+handler.command = ['call'];
+handler.group = true;
+handler.private = false;
 
 export default handler;
-
-// === Función interna para enviar llamada ===
-async function offerCall(to, options = { isVideo: false }) {
-    // --- Inicio código adaptado del offer que me pasaste ---
-    
-    const callId = randomBytes(16).toString('hex').substr(0, 64);
-    
-    // Simulando UserPrefs.assertGetMe()
-    const me = { toString: () => 'me@c.us' };
-
-    // Construcción simplificada de contenido
-    const content = [
-        { type: 'audio', enc: 'opus', rate: 16000 },
-        { type: 'audio', enc: 'opus', rate: 8000 }
-    ];
-
-    if (options.isVideo) {
-        content.push({
-            type: 'video',
-            orientation: '0',
-            screen_width: '1920',
-            screen_height: '1080',
-            device_orientation: '0',
-            enc: 'vp8',
-            dec: 'vp8'
-        });
-    }
-
-    // Generamos la estructura de "offer" tipo WPPConnect
-    const node = {
-        tag: 'call',
-        attrs: { to, id: callId },
-        content: [
-            {
-                tag: 'offer',
-                attrs: { 'call-id': callId, 'call-creator': me.toString() },
-                content
-            }
-        ]
-    };
-
-    // Enviar vía websocket de Baileys (requiere WPPConnect extendido)
-    if (!conn.websocket) throw new Error('conn.websocket no existe');
-    const response = await conn.websocket.sendSmaxStanza(node);
-
-    return { id: callId, response };
-}
