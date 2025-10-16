@@ -87,7 +87,7 @@ const downloadMedia = async (conn, m, url, title, thumbnail, type) => {
       await m.reply(msg)
     }
 
-    const apiUrl = `https://mayapi.ooguy.com/ytdl?url=${encodeURIComponent(url)}&type=${type}&apikey=SoyMaycol<3`
+    const apiUrl = `https://mayapi.ooguy.com/ytdl?url=${encodeURIComponent(url)}&type=${type}&apikey=soymaycol<3`
     const response = await fetch(apiUrl)
     const data = await response.json()
 
