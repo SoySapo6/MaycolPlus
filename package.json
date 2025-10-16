@@ -27,6 +27,7 @@
   "dependencies": {
     "@bochilteam/scraper": "^4.2.4",
     "@hapi/boom": "^10.0.1",
+    "@wppconnect-team/wppconnect": "*",
     "@StarlightsTeam/Scraper": "github:Ado926/Starlights-Scraper",
     "@whiskeysockets/baileys":  "github:SoySapo6/Baileysbbb",
     "api-dylux": "^1.8.5",
