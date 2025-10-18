@@ -343,44 +343,44 @@ global.dfail = (type, m, conn, usedPrefix, command) => {
 let user2 = m.pushName || 'Anónimo'
 const msg = {
 rowner: `┏━━━✦☆✦━━━┓
-🌙  El conjuro *${comando}*  
+🌙  El conjuro del *comando*
 solo lo puede usar mi amo supremo.  
 (ノಠ益ಠ)ノ彡✧
 ┗━━━✦☆✦━━━┛`,
 
 owner: `╔═══ ❖ ═══╗
-🔮 El hechizo *${comando}*  
+🔮 El hechizo del *comando*
 pertenece a los guardianes mayores.  
 ヽ(>∀<☆)ノ
 ╚═══ ❖ ═══╝`,
 
 mods: `｡☆✼★━━━━★✼☆｡
-☁️ El poder de *${comando}*  
+☁️ El poder del *comando*
 está reservado a los moderadores mágicos.
 (｡•́︿•̀｡)
 ｡☆✼★━━━━★✼☆｡`,
 
-premium: `✧･ﾟ: *${comando}* ✧･ﾟ:
-💎 Solo los bendecidos premium  
-pueden tocar este tesoro UwU
+premium: `✧･ﾟ: *_MaycolPlus_* ✧･ﾟ:
+💎 El comando es solo para los 
+bendecidos premium que pueden tocar este tesoro UwU
 ⊂(￣▽￣)⊃`,
 
 group: `┏(＾0＾)┛
-🏮 El ritual *${comando}*  
+🏮 El ritual del *comando*
 sólo funciona en salones grupales.
 ┗(＾0＾) ┓`,
 
 private: `╭(♡･ㅂ･)و ̑̑
-📜 El conjuro *${comando}*  
+📜 El conjuro del *comando*
 sólo se revela en privado conmigo.
 ╰(°▽°)╯`,
 
 admin: `( ⚆ _ ⚆ )  
-📛 El talismán *${comando}*  
+📛 El *comando*
 requiere la fuerza de un admin.`,
 
 botAdmin: `╰(⇀︿⇀)つ-]═──
-🤖 Para usar *${comando}*  
+🤖 Para usar este *comando* 
 necesito ser el guardián admin primero!`,
 
 unreg: `｡･ﾟﾟ*(>д<)*ﾟﾟ･｡
