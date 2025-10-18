@@ -50,8 +50,8 @@ handler.before = async (m, { conn }) => {
   const chat = global.db.data.chats[m.chat]
   if (!chat || !chat.mutedUsers) return false
 
-  const senderId = m.key.participant || m.sender
-
+  const senderId = (m.key.participant || m.sender || '').replace(/[^0-9]/g, '') + '@s.whatsapp.net'
+  
   if (chat.mutedUsers[senderId]) {
     try {
       await conn.sendMessage(m.chat, {
