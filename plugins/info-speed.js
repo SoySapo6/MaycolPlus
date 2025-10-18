@@ -166,7 +166,7 @@ var handler = async (m, { conn }) => {
 
 handler.help = ['speed', 'status', 'info', 'ping', 'system']
 handler.tags = ['info']
-handler.command = ['speed', 'status', 'info', 'ping', 'system', 'bot']
+handler.command = ['speed', 'status', 'info', 'ping', 'system']
 handler.register = false
 
 export default handler
