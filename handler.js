@@ -155,15 +155,59 @@ export async function handler(chatUpdate) {
         m.exp += Math.ceil(Math.random() * 10)
 
         let usedPrefix
+        
+        const lidCache = new Map()
 
-        // La obtención de metadatos del grupo es una operación asíncrona, se mantiene igual.
-        const groupMetadata = m.isGroup ? (this.chats[m.chat]?.metadata || await this.groupMetadata(m.chat).catch(_ => null)) : {}
-        const participants = m.isGroup ? (groupMetadata.participants || []) : []
-        const userInGroup = participants.find(p => p.id === m.sender) || {}
-        const botInGroup = participants.find(p => p.id === this.user.jid) || {}
-        const isRAdmin = userInGroup?.admin === "superadmin"
-        const isAdmin = isRAdmin || userInGroup?.admin === "admin"
-        const isBotAdmin = !!botInGroup?.admin
+async function resolveLidToRealJid(lid, conn, groupChatId, maxRetries = 3, retryDelay = 60000) {
+  const inputJid = lid.toString()
+  if (!inputJid.endsWith("@lid") || !groupChatId?.endsWith("@g.us"))
+    return inputJid.includes("@") ? inputJid : `${inputJid}@s.whatsapp.net`
+
+  if (lidCache.has(inputJid)) return lidCache.get(inputJid)
+
+  const lidToFind = inputJid.split("@")[0]
+  let attempts = 0
+  while (attempts < maxRetries) {
+    try {
+      const metadata = await conn?.groupMetadata(groupChatId)
+      if (!metadata?.participants) throw new Error("No se obtuvieron participantes")
+      for (const participant of metadata.participants) {
+        try {
+          if (!participant?.jid) continue
+          const contactDetails = await conn?.onWhatsApp(participant.jid)
+          if (!contactDetails?.[0]?.lid) continue
+          const possibleLid = contactDetails[0].lid.split("@")[0]
+          if (possibleLid === lidToFind) {
+            lidCache.set(inputJid, participant.jid)
+            return participant.jid
+          }
+        } catch { continue }
+      }
+      lidCache.set(inputJid, inputJid)
+      return inputJid
+    } catch {
+      if (++attempts >= maxRetries) {
+        lidCache.set(inputJid, inputJid)
+        return inputJid
+      }
+      await new Promise(r => setTimeout(r, retryDelay))
+    }
+  }
+  return inputJid
+}
+
+const groupMetadata = m.isGroup ? (this.chats[m.chat]?.metadata || await this.groupMetadata(m.chat).catch(_ => null)) : {}
+const participants = m.isGroup ? (groupMetadata.participants || []) : []
+
+// 🔹 Conversión de lid → jid real antes de buscar al usuario
+const realSender = await resolveLidToRealJid(m.sender, this, m.chat)
+
+const userInGroup = participants.find(p => p.id === realSender) || {}
+const botInGroup = participants.find(p => p.id === this.user.jid) || {}
+
+const isRAdmin = userInGroup?.admin === "superadmin"
+const isAdmin = isRAdmin || userInGroup?.admin === "admin"
+const isBotAdmin = !!botInGroup?.admin
 
         const ___dirname = path.join(path.dirname(fileURLToPath(import.meta.url)), './plugins')
         for (let name in global.plugins) {
