@@ -28,7 +28,7 @@
     "@bochilteam/scraper": "^4.2.4",
     "@hapi/boom": "^10.0.1",
     "@StarlightsTeam/Scraper": "github:Ado926/Starlights-Scraper",
-    "@whiskeysockets/baileys":  "github:SoySapo6/AdonixBaileys",
+    "@whiskeysockets/baileys":  "github:meado-learner/Baileys",
     "api-dylux": "^1.8.5",
     "aptoide-scraper": "github:DIEGO-OFC/dv-aptoide-scraper",
     "ruhend-scraper": "*",
