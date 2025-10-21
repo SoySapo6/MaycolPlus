@@ -42,7 +42,7 @@ let handler = async (m, { conn }) => {
   let menuText = `
 ╔ 𖤐 𝐌𝐚𝐲𝐜𝐨𝐥ℙ𝕝𝕦𝕤 𖤐 ╗
 
-[ ☾ ] Espíritu: @${userId.split('@')[0]}
+[ ☾ ] Espíritu: @${name}
 [ ☀︎ ] Tiempo observándote: ${uptime}
 [ ✦ ] Espíritus registrados: ${totalreg}
 
@@ -66,9 +66,9 @@ ${cmds.map(cmd => `│ ▪️ ${cmd}`).join('\n')}
 
   const videoPath = './storage/videos/lv_0_20251012222157.mp4'
   const nativeButtons = [
-    { name: 'cta_url', buttonParamsJson: JSON.stringify({ display_text: '★ Canal de WhatsApp', url: 'https://whatsapp.com/channel/0029VayXJte65yD6LQGiRB0R' }) },
-    { name: 'cta_url', buttonParamsJson: JSON.stringify({ display_text: '★ Sobre mi Creador', url: 'https://soymaycol.is-a.dev' }) },
-    { name: 'cta_url', buttonParamsJson: JSON.stringify({ display_text: '★ Doname!', url: 'https://www.paypal.com/paypalme/soymaycol' }) }
+    { name: 'cta_url', buttonParamsJson: JSON.stringify({ display_text: '[ ★ ] Canal de WhatsApp', url: 'https://whatsapp.com/channel/0029VayXJte65yD6LQGiRB0R' }) },
+    { name: 'cta_url', buttonParamsJson: JSON.stringify({ display_text: '[ ★ ] Sobre mi Creador', url: 'https://soymaycol.is-a.dev' }) },
+    { name: 'cta_url', buttonParamsJson: JSON.stringify({ display_text: '[ ★ ] Doname!', url: 'https://www.paypal.com/paypalme/soymaycol' }) }
   ]
 
   let media = await prepareWAMessageMedia({ video: fs.readFileSync(videoPath) }, { upload: conn.waUploadToServer })
@@ -82,7 +82,7 @@ ${cmds.map(cmd => `│ ▪️ ${cmd}`).join('\n')}
     nativeFlowMessage: proto.Message.InteractiveMessage.NativeFlowMessage.fromObject({ buttons: nativeButtons })
   })
 
-  const msg = generateWAMessageFromContent(m.chat, { interactiveMessage }, { userJid: conn.user.jid, quoted: m })
+  const msg = generateWAMessageFromContent(m.chat, { interactiveMessage }, { userJid: conn.user.jid, quoted: m, contextInfo: { mentionedJid: [userId] } })
   await conn.relayMessage(m.chat, msg.message, { messageId: msg.key.id })
 }
 
