@@ -6,7 +6,6 @@ import { prepareWAMessageMedia, generateWAMessageFromContent, proto } from '@whi
 
 let handler = async (m, { conn }) => {
   let userId = m.mentionedJid?.[0] || m.sender
-  let user = global.db.data.users[userId]
   let name = conn.getName(userId)
   let _uptime = process.uptime() * 1000
   let uptime = clockString(_uptime)
@@ -42,7 +41,7 @@ let handler = async (m, { conn }) => {
   let menuText = `
 ╔ 𖤐 𝐌𝐚𝐲𝐜𝐨𝐥ℙ𝕝𝕦𝕤 𖤐 ╗
 
-[ ☾ ] Espíritu: @${name}
+[ ☾ ] Espíritu: ${name}
 [ ☀︎ ] Tiempo observándote: ${uptime}
 [ ✦ ] Espíritus registrados: ${totalreg}
 
@@ -72,7 +71,6 @@ ${cmds.map(cmd => `│ ▪️ ${cmd}`).join('\n')}
   ]
 
   let media = await prepareWAMessageMedia({ video: fs.readFileSync(videoPath) }, { upload: conn.waUploadToServer })
-
   const header = proto.Message.InteractiveMessage.Header.fromObject({ hasMediaAttachment: true, videoMessage: media.videoMessage })
 
   const interactiveMessage = proto.Message.InteractiveMessage.fromObject({
@@ -82,7 +80,11 @@ ${cmds.map(cmd => `│ ▪️ ${cmd}`).join('\n')}
     nativeFlowMessage: proto.Message.InteractiveMessage.NativeFlowMessage.fromObject({ buttons: nativeButtons })
   })
 
-  const msg = generateWAMessageFromContent(m.chat, { interactiveMessage }, { userJid: conn.user.jid, quoted: m, contextInfo: { mentionedJid: [userId] } })
+  const msg = generateWAMessageFromContent(m.chat, { interactiveMessage }, { 
+    userJid: conn.user.jid, 
+    quoted: m, 
+    contextInfo: { mentionedJid: [userId] } 
+  })
   await conn.relayMessage(m.chat, msg.message, { messageId: msg.key.id })
 }
 
