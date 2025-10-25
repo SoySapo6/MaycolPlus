@@ -1,42 +1,35 @@
-const handler = async (msg, { conn, isOwner }) => {
-  try {
-    const chatId = msg.key.remoteJid
-    const sender = (msg.key.participant || msg.key.remoteJid).replace(/[^0-9]/g, '')
-    const isGroup = chatId.endsWith('@g.us')
-    const isBotMessage = msg.key.fromMe
+// 🧪 COMANDO: todos
+// 👨‍🔬 Inspirado en Senku Ishigami — “¡La ciencia no avanza sola, sino con todos los miembros del equipo!” ⚗️
 
-    if (!isGroup) {
-      await conn.sendMessage(chatId, { text: '⚠️ *Este comando solo se puede usar en grupos.*' }, { quoted: msg })
-      return
-    }
+const handler = async (m, { isOwner, isAdmin, conn, text, participants, args, command }) => {
+  const mensaje = args.join` `
+  const info = mensaje ? `*» 𝔸ℕ𝕌ℕℂ𝕀𝕆 𝔾𝕃𝕆𝔹𝔸𝕃:* ${mensaje}` : '*» 𝕀ℕ𝕍𝕆ℂ𝔸ℂ𝕀𝕆́ℕ 𝔾𝔼ℕ𝔼ℝ𝔸𝕃 𝔻𝔼𝕃 𝔼ℚ𝕌𝕀ℙ𝕆*'
+  const nombreBot = global.botname || '𝕭𝖔𝖙 𝖉𝖊 𝕾𝖊𝖓𝖐𝖚'
+  const versionBot = global.vs || 'v1.0.0'
 
-    const metadata = await conn.groupMetadata(chatId)
-    const participant = metadata.participants.find(p => p.id.includes(sender))
-    const isAdmin = participant?.admin === 'admin' || participant?.admin === 'superadmin'
+  let texto = `🧬 *𝓘𝓝𝓥𝓞𝓒𝓐𝓒𝓘𝓞́𝓝 𝓒𝓞ℒ𝓔𝓒𝓣𝓘𝓥𝓐* 🧬\n`
+  texto += `──────────────────────────\n`
+  texto += `👨‍🔬 *𝕮𝖎𝖊𝖓𝖙𝖎́𝖋𝖎𝖈𝖔𝖘 𝖈𝖔𝖓𝖛𝖔𝖈𝖆𝖉𝖔𝖘:* ${participants.length}\n`
+  texto += `📢 ${info}\n\n`
+  texto += `╭─⬣「 *${nombreBot}* 」⬣\n`
 
-    if (!isAdmin && !isOwner && !isBotMessage) {
-      await conn.sendMessage(chatId, { text: '❌ *Este comando solo puede usarlo un administrador o el dueño del bot.*' }, { quoted: msg })
-      return
-    }
-
-    const participants = metadata.participants
-    const mentionIds = participants.map(p => p.id)
-    const mentionText = mentionIds.map(id => `@${id.split('@')[0]}`).join(' ')
-
-    await conn.sendMessage(chatId, {
-      text: mentionText,
-      mentions: mentionIds
-    }, { quoted: msg })
-
-  } catch (error) {
-    console.error('❌ Error en el comando tagall:', error)
-    await conn.sendMessage(msg.key.remoteJid, { text: '❌ Ocurrió un error al ejecutar el comando tagall.' }, { quoted: msg })
+  for (const miembro of participants) {
+    texto += `│ 🧪 @${miembro.id.split('@')[0]}\n`
   }
+
+  texto += `╰──────────────────⬣\n`
+
+  await conn.sendMessage(m.chat, {
+    text: texto,
+    mentions: participants.map(a => a.id)
+  })
 }
 
-handler.tags = ['group']
-handler.help = ['tagall']
-handler.command = ['tagall', 'invocar', 'todos']
+handler.help = ['invocar']
+handler.tags = ['grupo']
+handler.command = ['invocar', 'tagall']
+handler.admin = true
 handler.group = true
 
 export default handler
+
