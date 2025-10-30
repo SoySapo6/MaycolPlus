@@ -1,8 +1,3 @@
-Aquí están los dos archivos de comandos para tu bot:
-
-## 1. Comando para agregar secretos (`secreto-add.js`)
-
-```javascript
 const handler = async (m, { conn, text }) => {
   try {
     if (!text) {
