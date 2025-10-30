@@ -19,6 +19,7 @@ global.libreria = 'Baileys'
 global.baileys = 'V 6.7.16'
 global.vs = '2.2.0'
 global.usedPrefix = '#'
+global.user2 = '18'
 global.sessions = 'MayBot'
 global.jadi = 'MayBots'
 global.yukiJadibts = true
