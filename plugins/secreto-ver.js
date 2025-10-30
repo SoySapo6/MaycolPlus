@@ -27,7 +27,7 @@ const handler = async (m, { conn }) => {
 
 handler.help = ['secret', 'secreto']
 handler.tags = ['fun']
-handler.command = ['secret', 'secretorandom', 'versecret']
+handler.command = ['secret', 'secretorandom', 'versecret', 'secreto', 'versecreto']
 handler.register = true
 
 export default handler
