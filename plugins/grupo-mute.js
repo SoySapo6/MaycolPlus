@@ -29,7 +29,7 @@ const handler = async (m, { conn, command, args, isAdmin }) => {
   if (!chat.mutedUsers) chat.mutedUsers = {}
 
   const mentioned = m.mentionedJid ? m.mentionedJid[0] : args[0]
-  if (!mentioned) return m.reply(`✳️ Menciona (no responder) al usuario a mutear/desmutear.`)
+  if (!mentioned) return m.reply(`✳️ Menciona (no responder) al usuario a mute/desmute.`)
 
   if (command === 'mute') {
     chat.mutedUsers[mentioned] = true
