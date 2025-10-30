@@ -14,6 +14,15 @@ async function isAdminOrOwner(m, conn) {
 const handler = async (m, { conn, command, args, isAdmin }) => {
   if (!m.isGroup) return m.reply('🔒 Solo funciona en grupos.')
 
+  const groupMetadata = await conn.groupMetadata(m.chat);
+
+    const userParticipant = groupMetadata.participants.find(p => p.id === m.sender);
+    const isUserAdmin = userParticipant?.admin === 'admin' || userParticipant?.admin === 'superadmin' || m.sender === groupMetadata.owner;
+
+    if (!isUserAdmin) {
+        return m.reply('❌ Solo los admins pueden usar este comando');
+    }
+  
   if (!global.db.data.chats[m.chat]) global.db.data.chats[m.chat] = {}
   const chat = global.db.data.chats[m.chat]
 
