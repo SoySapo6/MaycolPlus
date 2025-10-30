@@ -29,7 +29,7 @@ const handler = async (m, { conn, text }) => {
 
 handler.help = ['addsecret <texto>']
 handler.tags = ['fun']
-handler.command = ['addsecret', 'agregarsecret']
+handler.command = ['addsecret', 'agregarsecret', 'addsecreto', 'añadirsecreto']
 handler.register = true
 
 export default handler
