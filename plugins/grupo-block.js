@@ -32,12 +32,12 @@ const handler = async (m, { conn, command, args }) => {
   const mentioned = m.mentionedJid ? m.mentionedJid[0] : args[0]
   if (!mentioned) return m.reply(`📍 Menciona (sin responder) al usuario que quieres bloquear o desbloquear.`)
 
-  if (command === 'blocklocal') {
+  if (command === 'block') {
     chat.blockedUsers[mentioned] = true
     return m.reply(`✅ Usuario bloqueado localmente. El bot lo ignorará en este grupo.`)
   }
 
-  if (command === 'unblocklocal') {
+  if (command === 'unblock') {
     delete chat.blockedUsers[mentioned]
     return m.reply(`✅ Usuario desbloqueado localmente. El bot volverá a responderle.`)
   }
