@@ -43,7 +43,7 @@ const handler = async (m, { conn, command, args }) => {
 
 handler.command = ['block', 'unblock']
 handler.group = true
-handler.admin = true
+handler.admin = false
 handler.tags = ['group']
 handler.help = ['block @usuario', 'unblock @usuario']
 
