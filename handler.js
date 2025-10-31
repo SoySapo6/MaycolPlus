@@ -152,12 +152,24 @@ if (m.isBaileys) return
 m.exp += Math.ceil(Math.random() * 10)
 let usedPrefix
 const groupMetadata = m.isGroup ? { ...(conn.chats[m.chat]?.metadata || await this.groupMetadata(m.chat).catch(_ => null) || {}), ...(((conn.chats[m.chat]?.metadata || await this.groupMetadata(m.chat).catch(_ => null) || {}).participants) && { participants: ((conn.chats[m.chat]?.metadata || await this.groupMetadata(m.chat).catch(_ => null) || {}).participants || []).map(p => ({ ...p, id: p.jid, jid: p.jid, lid: p.lid })) }) } : {}
-const participants = ((m.isGroup ? groupMetadata.participants : []) || []).map(participant => ({ id: participant.jid, jid: participant.jid, lid: participant.lid, admin: participant.admin }))
-const userGroup = (m.isGroup ? participants.find((u) => conn.decodeJid(u.jid) === m.sender) : {}) || {}
-const botGroup = (m.isGroup ? participants.find((u) => conn.decodeJid(u.jid) == this.user.jid) : {}) || {}
-const isRAdmin = userGroup?.admin == "superadmin" || false
-const isAdmin = isRAdmin || userGroup?.admin == "admin" || false
-const isBotAdmin = botGroup?.admin || false
+let isAdmin = false
+let isBotAdmin = false
+
+if (m.isGroup) {
+    const groupMetadata = await this.groupMetadata(m.chat)
+    const userParticipant = groupMetadata.participants.find(p => p.id === m.sender)
+    const botParticipant = groupMetadata.participants.find(p => p.id === this.user.jid)
+
+    isAdmin =
+        userParticipant?.admin === 'admin' ||
+        userParticipant?.admin === 'superadmin' ||
+        m.sender === groupMetadata.owner
+
+    isBotAdmin =
+        botParticipant?.admin === 'admin' ||
+        botParticipant?.admin === 'superadmin' ||
+        this.user.jid === groupMetadata.owner
+}
 
 const ___dirname = path.join(path.dirname(fileURLToPath(import.meta.url)), "./plugins")
 for (const name in global.plugins) {
