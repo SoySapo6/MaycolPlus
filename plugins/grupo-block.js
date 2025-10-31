@@ -43,7 +43,7 @@ const handler = async (m, { conn, command, args }) => {
   }
 }
 
-handler.command = ['blocklocal', 'unblocklocal']
+handler.command = ['block', 'unblock']
 handler.group = true
 handler.register = false
 handler.tags = ['group']
