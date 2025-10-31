@@ -151,14 +151,29 @@ await delay(time)
 if (m.isBaileys) return
 m.exp += Math.ceil(Math.random() * 10)
 let usedPrefix
-const groupMetadata = m.isGroup ? { ...(conn.chats[m.chat]?.metadata || await this.groupMetadata(m.chat).catch(_ => null) || {}), ...(((conn.chats[m.chat]?.metadata || await this.groupMetadata(m.chat).catch(_ => null) || {}).participants) && { participants: ((conn.chats[m.chat]?.metadata || await this.groupMetadata(m.chat).catch(_ => null) || {}).participants || []).map(p => ({ ...p, id: p.jid, jid: p.jid, lid: p.lid })) }) } : {}
+
+// Obtener metadata del grupo si aplica
+let groupMetadata = {}
+let participants = []
+
+if (m.isGroup) {
+    try {
+        groupMetadata = await this.groupMetadata(m.chat)
+        participants = groupMetadata.participants || []
+    } catch (e) {
+        console.error('❌ Error al obtener metadata del grupo:', e)
+        groupMetadata = {}
+        participants = []
+    }
+}
+
+// Detección de admins usando método nuevo
 let isAdmin = false
 let isBotAdmin = false
 
-if (m.isGroup) {
-    const groupMetadata = await this.groupMetadata(m.chat)
-    const userParticipant = groupMetadata.participants.find(p => p.id === m.sender)
-    const botParticipant = groupMetadata.participants.find(p => p.id === this.user.jid)
+if (m.isGroup && participants.length > 0) {
+    const userParticipant = participants.find(p => p.id === m.sender)
+    const botParticipant = participants.find(p => p.id === this.user.jid)
 
     isAdmin =
         userParticipant?.admin === 'admin' ||
