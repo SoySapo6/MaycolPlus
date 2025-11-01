@@ -75,7 +75,7 @@ ${cmds.map(cmd => `│ ▪️ ${cmd}`).join('\n')}
       mentionedJid: [m.sender, userId],
       isForwarded: true,
       forwardedNewsletterMessageInfo: {
-        newsletterJid: '120363372883715167@newsletter',
+        newsletterJid: '120363424241780448@newsletter',
         newsletterName: '𝐒𝐨𝐲𝐌𝐚𝐲𝐜𝐨𝐥 <𝟑 • Actualizaciones',
         serverMessageId: -1,
       },
