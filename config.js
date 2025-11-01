@@ -26,13 +26,13 @@ global.jadi = 'MayBots'
 global.yukiJadibts = true
 
 global.namecanal = '𝐒𝐨𝐲𝐌𝐚𝐲𝐜𝐨𝐥 <𝟑 • Actualizaciones'
-global.idcanal = '120363372883715167@newsletter'
-global.idcanal2 = '120363372883715167@newsletter'
-global.canal = 'https://whatsapp.com/channel/0029VayXJte65yD6LQGiRB0R'
-global.canalreg = '120363372883715167@newsletter'
+global.idcanal = '120363424241780448@newsletter'
+global.idcanal2 = '120363424241780448@newsletter'
+global.canal = 'https://whatsapp.com/channel/0029VbBIgz1HrDZg92ISUl2M'
+global.canalreg = '120363424241780448@newsletter'
 
 global.ch = {
-  ch1: '120363372883715167@newsletter'
+  ch1: '120363424241780448@newsletter'
 }
 
 global.multiplier = 69
