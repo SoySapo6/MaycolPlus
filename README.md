@@ -12,16 +12,33 @@
 
 ---
 
-### **`[ ★ ] Instalación por termux`**
+### **`[ ★ ] Opciones de Instalacion:`**
 <details>
-<summary><b>Instalación Manual :3</b></summary>
+<summary><b>Instalación del bot en termux! ♥︎</b></summary>
 
 > *Comandos para instalar de forma manual*
+
 ```bash
-termux-setup-storage
+apt update && pkg install -y git nodejs
 ```
 ```bash
-apt update && apt upgrade && pkg install -y git nodejs ffmpeg imagemagick yarn
+git clone https://github.com/SoySapo6/MaycolPlus && cd MaycolPlus
+```
+```bash
+npm install
+```
+```bash
+npm start
+```
+> *Si aparece **(Y/I/N/O/D/Z) [default=N] ?** use la letra **"y"** y luego **"ENTER"** para continuar con la instalación.*
+</details>
+<details>
+<summary><b>Instalacion por Ubuntu/Debian ◆</b></summary>
+
+> *Comandos para instalar de forma manual*
+
+```bash
+apt update && apt install -y git nodejs npm
 ```
 ```bash
 git clone https://github.com/SoySapo6/MaycolPlus && cd MaycolPlus
