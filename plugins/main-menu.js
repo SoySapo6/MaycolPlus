@@ -50,7 +50,7 @@ highlight_label: "[ ᴮʸ 𝐒𝐨𝐲𝐌𝐚𝐲𝐜𝐨𝐥 ]",
 rows: cmds.slice(0, 10).map((cmd, i) => ({
 title: cmd,
 description: `[ ♥︎ ] Comando de ${tagName.toLowerCase()}.`,
-rowId: `.${cmd.replace('#','')}`
+id: `#${cmd}`
 }))
 })
 }
