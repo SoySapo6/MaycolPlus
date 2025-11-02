@@ -28,8 +28,6 @@ ${usedPrefix + command} https://www.facebook.com/watch/?v=1234567890`
 
 ━━━━━━━━━━━━━━━
 🔰 *Título:* ${video.title}
-📁 *Archivo:* ${video.url.split('/').pop()}
-⏬ *Enlace original:* 
 ${args[0]}
 ━━━━━━━━━━━━━━━
     `.trim()
