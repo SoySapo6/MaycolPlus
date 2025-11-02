@@ -72,7 +72,7 @@ Creado con esencia por: SoyMaycol <3
 
 ━━━━━━━━━━━━━━━
 
-*Usa los botones de abajo para navegar* 👇
+
 `.trim()
 
 await conn.relayMessage(m.chat, {      
@@ -80,7 +80,7 @@ await conn.relayMessage(m.chat, {
         contextInfo: {      
             mentionedJid: [m.sender, userId],      
             externalAdReply: {      
-                title: "𖤐 MaycolPlus Bot 𖤐",      
+                title: "𖤐 MaycolPlus 𖤐",      
                 body: 'Creado por SoyMaycol <3',      
                 thumbnailUrl: "https://i.pinimg.com/736x/25/ed/8d/25ed8dfad159281b256e4d377fa2cc92.jpg",      
                 sourceUrl: `https://whatsapp.com/channel/0029VbBIgz1HrDZg92ISUl2M`,      
@@ -107,14 +107,14 @@ await conn.relayMessage(m.chat, {
             text: menuText      
         },      
         footer: {      
-            text: "© SoyMaycol"      
+            text: "© Hecho por SoyMaycol <3"      
         },      
         nativeFlowMessage: {      
             messageParamsJson: JSON.stringify({      
                 limited_time_offer: {      
                     text: "MaycolPlus",      
                     url: "https://whatsapp.com/channel/0029VbBIgz1HrDZg92ISUl2M",      
-                    copy_code: "https://whatsapp.com/channel/0029VbBIgz1HrDZg92ISUl2M",      
+                    copy_code: "Hola :) Sigueme en mi Canal",      
                     expiration_time: Date.now() * 999      
                 },      
                 bottom_sheet: {      
