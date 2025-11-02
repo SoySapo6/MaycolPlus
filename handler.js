@@ -132,10 +132,10 @@ user.name = nuevo
 }} catch {}
 const chat = global.db.data.chats[m.chat]
 const settings = global.db.data.settings[this.user.jid]  
-const isROwner = [...global.owner.map((number) => number)].map(v => v.replace(/[^0-9]/g, "") + "@lid").includes(m.sender)
+const isROwner = [...global.owner.map((number) => number)].map(v => v.replace(/[^0-9]/g, "") + "@s.whatsapp.net").includes(m.sender)
 const isOwner = isROwner || m.fromMe
-const isPrems = isROwner || global.prems.map(v => v.replace(/[^0-9]/g, "") + "@lid").includes(m.sender) || user.premium == true
-const isOwners = [this.user.jid, ...global.owner.map((number) => number + "@lid")].includes(m.sender)
+const isPrems = isROwner || global.prems.map(v => v.replace(/[^0-9]/g, "") + "@s.whatsapp.net").includes(m.sender) || user.premium == true
+const isOwners = [this.user.jid, ...global.owner.map((number) => number + "@s.whatsapp.net")].includes(m.sender)
 if (settings.self && !isOwners) return
 if (settings.gponly && !isOwners && !m.chat.endsWith('g.us') && !/code|p|ping|qr|estado|status|infobot|botinfo|report|reportar|invite|join|logout|suggest|help|menu/gim.test(m.text)) return
 if (opts["queque"] && m.text && !(isPrems)) {
@@ -151,39 +151,34 @@ await delay(time)
 if (m.isBaileys) return
 m.exp += Math.ceil(Math.random() * 10)
 let usedPrefix
-
-// Obtener metadata del grupo si aplica
 let groupMetadata = {}
 let participants = []
-
-if (m.isGroup) {
-    try {
-        groupMetadata = await this.groupMetadata(m.chat)
-        participants = groupMetadata.participants || []
-    } catch (e) {
-        console.error('❌ Error al obtener metadata del grupo:', e)
-        groupMetadata = {}
-        participants = []
-    }
-}
-
-// Detección de admins usando método nuevo
+let userGroup = {}
+let botGroup = {}
+let isRAdmin = false
 let isAdmin = false
 let isBotAdmin = false
 
-if (m.isGroup && participants.length > 0) {
-    const userParticipant = participants.find(p => p.id === m.sender)
-    const botParticipant = participants.find(p => p.id === this.user.jid)
-
-    isAdmin =
-        userParticipant?.admin === 'admin' ||
-        userParticipant?.admin === 'superadmin' ||
-        m.sender === groupMetadata.owner
-
-    isBotAdmin =
-        botParticipant?.admin === 'admin' ||
-        botParticipant?.admin === 'superadmin' ||
-        this.user.jid === groupMetadata.owner
+if (m.isGroup) {
+    try {
+        groupMetadata = await this.groupMetadata(m.chat)  // <-- Cambiar conn por this
+        participants = groupMetadata.participants || []
+        
+        // Buscar al usuario actual
+        const userParticipant = participants.find(p => p.id === m.sender)
+        isRAdmin = userParticipant?.admin === 'superadmin' || m.sender === groupMetadata.owner
+        isAdmin = isRAdmin || userParticipant?.admin === 'admin'
+        
+        // Buscar al bot
+        const botParticipant = participants.find(p => p.id === this.user.jid)  // <-- Cambiar conn por this
+        isBotAdmin = botParticipant?.admin === 'admin' || botParticipant?.admin === 'superadmin'
+        
+        // Mantener compatibilidad con código antiguo
+        userGroup = userParticipant || {}
+        botGroup = botParticipant || {}
+    } catch (e) {
+        console.error('Error obteniendo metadata del grupo:', e)
+    }
 }
 
 const ___dirname = path.join(path.dirname(fileURLToPath(import.meta.url)), "./plugins")
