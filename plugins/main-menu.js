@@ -49,7 +49,7 @@ title: `${deco} ${tagName}`,
 highlight_label: "[ ᴮʸ 𝐒𝐨𝐲𝐌𝐚𝐲𝐜𝐨𝐥 ]",
 rows: cmds.slice(0, 10).map((cmd, i) => ({
 title: cmd,
-description: `[ ♥︎ ] Comando de ${tagName.toLowerCase()}.`,
+description: `[ ♥︎ ] Comando de ${tagName.toLowerCase()}, Escribe #${cmd} para probar el comando.`,
 id: `#${cmd}`
 }))
 })
