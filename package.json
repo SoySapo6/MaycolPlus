@@ -32,7 +32,7 @@
     "api-dylux": "^1.8.5",
     "aptoide-scraper": "github:DIEGO-OFC/dv-aptoide-scraper",
     "ruhend-scraper": "*",
-    "jimp": "^0.22.2",
+    "jimp": "^0.16.1",
     "@soymaycol/yt-dlp": "^1.0.1",
     "boxen": "^7.1.1",
     "awesome-phonenumber": "^3.4.0",
