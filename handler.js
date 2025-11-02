@@ -151,34 +151,39 @@ await delay(time)
 if (m.isBaileys) return
 m.exp += Math.ceil(Math.random() * 10)
 let usedPrefix
+
+// Obtener metadata del grupo si aplica
 let groupMetadata = {}
 let participants = []
-let userGroup = {}
-let botGroup = {}
-let isRAdmin = false
-let isAdmin = false
-let isBotAdmin = false
 
 if (m.isGroup) {
     try {
-        groupMetadata = await this.groupMetadata(m.chat)  // <-- Cambiar conn por this
+        groupMetadata = await this.groupMetadata(m.chat)
         participants = groupMetadata.participants || []
-        
-        // Buscar al usuario actual
-        const userParticipant = participants.find(p => p.id === m.sender)
-        isRAdmin = userParticipant?.admin === 'superadmin' || m.sender === groupMetadata.owner
-        isAdmin = isRAdmin || userParticipant?.admin === 'admin'
-        
-        // Buscar al bot
-        const botParticipant = participants.find(p => p.id === this.user.jid)  // <-- Cambiar conn por this
-        isBotAdmin = botParticipant?.admin === 'admin' || botParticipant?.admin === 'superadmin'
-        
-        // Mantener compatibilidad con código antiguo
-        userGroup = userParticipant || {}
-        botGroup = botParticipant || {}
     } catch (e) {
-        console.error('Error obteniendo metadata del grupo:', e)
+        console.error('❌ Error al obtener metadata del grupo:', e)
+        groupMetadata = {}
+        participants = []
     }
+}
+
+// Detección de admins usando método nuevo
+let isAdmin = false
+let isBotAdmin = false
+
+if (m.isGroup && participants.length > 0) {
+    const userParticipant = participants.find(p => p.id === m.sender)
+    const botParticipant = participants.find(p => p.id === this.user.jid)
+
+    isAdmin =
+        userParticipant?.admin === 'admin' ||
+        userParticipant?.admin === 'superadmin' ||
+        m.sender === groupMetadata.owner
+
+    isBotAdmin =
+        botParticipant?.admin === 'admin' ||
+        botParticipant?.admin === 'superadmin' ||
+        this.user.jid === groupMetadata.owner
 }
 
 const ___dirname = path.join(path.dirname(fileURLToPath(import.meta.url)), "./plugins")
