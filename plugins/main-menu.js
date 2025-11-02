@@ -9,7 +9,6 @@ let _uptime = process.uptime() * 1000
 let uptime = clockString(_uptime)
 let totalreg = Object.keys(global.db.data.users).length
 
-// Saludo decorado
 let hour = new Intl.DateTimeFormat('es-PE', {
 hour: 'numeric',
 hour12: false,
@@ -25,7 +24,7 @@ hour < 20 ? "🌇 El atardecer pinta el cielo... momento mágico 🏮" :
 hour < 23 ? "🌃 Buenas noches... que los espíritus te cuiden 🌙" :
 "🌑 Es medianoche... los fantasmas susurran en la oscuridad 👀"
 
-// Agrupar comandos por categorías
+
 let categories = {}
 for (let plugin of Object.values(global.plugins)) {
 if (!plugin.help || !plugin.tags) continue
@@ -35,11 +34,9 @@ categories[tag].push(...plugin.help.map(cmd => `#${cmd}`))
 }
 }
 
-// Emojis random por categoría
 let decoEmojis = ['🌙', '👻', '🪄', '🏮', '📜', '💫', '😈', '🍡', '🔮', '🌸', '🪦', '✨']
 let emojiRandom = () => decoEmojis[Math.floor(Math.random() * decoEmojis.length)]
 
-// Crear secciones para la lista de comandos
 let sections = []
 for (let [tag, cmds] of Object.entries(categories)) {
 let tagName = tag.toUpperCase().replace(/_/g, ' ')
@@ -49,8 +46,8 @@ title: `${deco} ${tagName}`,
 highlight_label: "[ ᴮʸ 𝐒𝐨𝐲𝐌𝐚𝐲𝐜𝐨𝐥 ]",
 rows: cmds.slice(0, 10).map((cmd, i) => ({
 title: cmd,
-description: `[ ♥︎ ] Comando de la categoria "${tagName.toLowerCase()}", Escribe #${cmd} para probar el comando.`,
-id: `${cmd}`
+description: `[ ♥︎ ] Comando de la categoria "${tagName.toLowerCase()}", Escribe ${cmd} para probar el comando.`,
+id: `#${cmd}`
 }))
 })
 }
