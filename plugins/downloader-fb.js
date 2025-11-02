@@ -12,50 +12,36 @@ ${usedPrefix + command} https://www.facebook.com/watch/?v=1234567890`
   try {
     await conn.sendMessage(m.chat, { react: { text: '🕒', key: m.key } })
 
-    let api = `https://api.dorratz.com/fbvideo?url=${encodeURIComponent(args[0])}`
+    // Usando la API nueva
+    let api = `https://mayapi.ooguy.com/facebook?url=${encodeURIComponent(args[0])}&apikey=soymaycol<3`
     let res = await fetch(api)
     let json = await res.json()
 
-    if (!json || !Array.isArray(json) || json.length === 0) {
+    if (!json?.status || !json.result?.url) {
       await conn.sendMessage(m.chat, { react: { text: '❌', key: m.key } })
       return m.reply('❌ No se encontró ningún video para ese enlace.')
     }
 
-    let sentAny = false
-
-    for (let item of json) {
-      if (!item.url || !item.resolution) continue
-
-      let caption = `
+    let video = json.result
+    let caption = `
 📹 *Facebook Video Downloader*
 
 ━━━━━━━━━━━━━━━
-🔰 *Resolución:* ${item.resolution}
-📁 *Archivo:* ${item.url.endsWith('.mp4') ? item.url.split('/').pop() : 'Descarga disponible'}
-━━━━━━━━━━━━━━━
+🔰 *Título:* ${video.title}
+📁 *Archivo:* ${video.url.split('/').pop()}
 ⏬ *Enlace original:* 
 ${args[0]}
-      `.trim()
+━━━━━━━━━━━━━━━
+    `.trim()
 
-      try {
-        await conn.sendMessage(m.chat, {
-          video: { url: item.url },
-          caption,
-          fileName: `${item.resolution.replace(/\s/g, '_')}.mp4`,
-          mimetype: 'video/mp4'
-        }, { quoted: m })
-        sentAny = true
-      } catch {
-        continue
-      }
-    }
+    await conn.sendMessage(m.chat, {
+      video: { url: video.url },
+      caption,
+      fileName: `${video.title.replace(/\s/g, '_')}.mp4`,
+      mimetype: 'video/mp4'
+    }, { quoted: m })
 
-    if (sentAny) {
-      await conn.sendMessage(m.chat, { react: { text: '✅', key: m.key } })
-    } else {
-      await conn.sendMessage(m.chat, { react: { text: '❌', key: m.key } })
-      m.reply('❌ No se pudo enviar ningún video válido.')
-    }
+    await conn.sendMessage(m.chat, { react: { text: '✅', key: m.key } })
 
   } catch (e) {
     console.error(e)
