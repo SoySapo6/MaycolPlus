@@ -1,5 +1,4 @@
-// ♥ 𝙼𝚎𝚗𝚞 𝚍𝚎 𝚂𝚘𝚢𝙼𝚊𝚢𝚌𝚘𝚕 ♥
-// ᵁˢᵃ ᵉˢᵗᵉ ᶜᵒᵈⁱᵍᵒ ˢⁱᵉᵐᵖʳᵉ ᶜᵒⁿ ᶜʳᵉᵈⁱᵗᵒˢ
+// Esta vez el menu ya no es mio xD, agarre una base pa lo botones y eso, y creditos al creador (no tengo el nombre del creador)
 import { proto } from '@whiskeysockets/baileys'
 
 let handler = async (m, { conn, args }) => {
