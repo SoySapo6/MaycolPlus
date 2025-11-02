@@ -50,7 +50,7 @@ highlight_label: "[ ᴮʸ 𝐒𝐨𝐲𝐌𝐚𝐲𝐜𝐨𝐥 ]",
 rows: cmds.slice(0, 10).map((cmd, i) => ({
 title: cmd,
 description: `[ ♥︎ ] Comando de ${tagName.toLowerCase()}.`,
-id: `.${cmd.replace('#', '')}`
+rowId: `.${cmd.replace('#','')}`
 }))
 })
 }
@@ -159,7 +159,7 @@ await conn.relayMessage(m.chat, {
                 bottom_sheet: {      
                     in_thread_buttons_limit: 2,      
                     divider_indices: [1, 2],      
-                    list_title: "[ ◆ ] Opciones del Menú",      
+                    list_title: "♥︎ Opciones del Menú ♥︎",      
                     button_title: "[ ◆ ] Abrir Menú"      
                 }      
             })      
