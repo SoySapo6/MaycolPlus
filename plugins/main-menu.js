@@ -47,10 +47,10 @@ let tagName = tag.toUpperCase().replace(/_/g, ' ')
 let deco = emojiRandom()
 sections.push({
 title: `${deco} ${tagName}`,
-highlight_label: "⚡",
+highlight_label: "[ ᴮʸ 𝐒𝐨𝐲𝐌𝐚𝐲𝐜𝐨𝐥 ]",
 rows: cmds.slice(0, 10).map((cmd, i) => ({
 title: cmd,
-description: `Comando de ${tagName.toLowerCase()}`,
+description: `[ ♥︎ ] Comando de ${tagName.toLowerCase()}.`,
 id: `.${cmd.replace('#', '')}`
 }))
 })
