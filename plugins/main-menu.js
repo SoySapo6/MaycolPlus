@@ -1,4 +1,3 @@
-// Esta vez el menu ya no es mio xD, agarre una base pa lo botones y eso, y creditos al creador (no tengo el nombre del creador)
 import { proto } from '@whiskeysockets/baileys'
 
 let handler = async (m, { conn, args }) => {
@@ -24,13 +23,12 @@ hour < 20 ? "🌇 El atardecer pinta el cielo... momento mágico 🏮" :
 hour < 23 ? "🌃 Buenas noches... que los espíritus te cuiden 🌙" :
 "🌑 Es medianoche... los fantasmas susurran en la oscuridad 👀"
 
-
 let categories = {}
 for (let plugin of Object.values(global.plugins)) {
 if (!plugin.help || !plugin.tags) continue
 for (let tag of plugin.tags) {
 if (!categories[tag]) categories[tag] = []
-categories[tag].push(...plugin.help.map(cmd => `#${cmd}`))
+categories[tag].push(...plugin.help)
 }
 }
 
@@ -45,8 +43,8 @@ sections.push({
 title: `${deco} ${tagName}`,
 highlight_label: "[ ᴮʸ 𝐒𝐨𝐲𝐌𝐚𝐲𝐜𝐨𝐥 ]",
 rows: cmds.slice(0, 10).map((cmd, i) => ({
-title: cmd,
-description: `[ ♥︎ ] Comando de la categoria "${tagName.toLowerCase()}", Escribe ${cmd} para probar el comando.`,
+title: `#${cmd}`,
+description: `[ ♥︎ ] Comando de la categoria "${tagName.toLowerCase()}", Escribe #${cmd} para probar el comando.`,
 id: `#${cmd}`
 }))
 })
@@ -71,7 +69,7 @@ Creado con esencia por: SoyMaycol <3
 
 `.trim()
 
-await conn.relayMessage(m.chat, {      
+let msg = {      
     interactiveMessage: {      
         contextInfo: {      
             mentionedJid: [m.sender, userId],      
@@ -162,7 +160,9 @@ await conn.relayMessage(m.chat, {
             })      
         }      
     }      
-}, { userJid: m.sender })
+}
+
+await conn.relayMessage(m.chat, msg, { userJid: m.sender, quoted: m })
 
 }
 
