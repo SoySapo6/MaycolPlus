@@ -1,67 +1,44 @@
 import fs from 'fs'
 import path from 'path'
 
-const marriagesFile = path.join('./database/marriages.json')
-if (!fs.existsSync(marriagesFile)) fs.writeFileSync(marriagesFile, '{}')
+let marriages = {}
 
-let marry = async (m, { conn }) => {
-  let data = JSON.parse(fs.readFileSync(marriagesFile))
-  let who = m.mentionedJid[0] || (m.quoted ? m.quoted.sender : null)
-  if (!who) return m.reply('Etiqueta o responde a alguien para casarte.')
-  if (who === m.sender) return m.reply('No puedes casarte contigo mismo.')
+const handler = async (m, { conn, command, text }) => {
+  let user = m.sender
+  let mentioned = m.mentionedJid[0]
+  if (!mentioned) return conn.reply(m.chat, 'Menciona a alguien', m)
+  let userName = conn.getName(user)
+  let mentionedName = conn.getName(mentioned)
+  let chatId = m.chat
 
-  let sender = m.sender
-  let name1 = conn.getName(sender)
-  let name2 = conn.getName(who)
+  marriages[chatId] = marriages[chatId] || {}
 
-  let marriedTo = data[sender]
-  let marriedBy = Object.keys(data).find(k => data[k] === sender)
+  switch (command) {
+    case 'marry':
+      if (marriages[chatId][user] && marriages[chatId][user] !== mentioned) {
+        let amante = mentionedName
+        let victima = conn.getName(marriages[chatId][user])
+        await conn.sendMessage(chatId, { video: { url: 'https://media1.tenor.com/m/an0diNvfSSwAAAAC/marriage-anime-sailor-moon.gif' }, gifPlayback: true, caption: `💔 ${userName} fue infiel con ${amante} y dejó a ${victima} triste 💔`, mentions: [mentioned, marriages[chatId][user]] }, { quoted: m })
+      } else {
+        marriages[chatId][user] = mentioned
+        marriages[chatId][mentioned] = user
+        await conn.sendMessage(chatId, { video: { url: 'https://media1.tenor.com/m/an0diNvfSSwAAAAC/marriage-anime-sailor-moon.gif' }, gifPlayback: true, caption: `💍 ${userName} se casó con ${mentionedName} 💍`, mentions: [mentioned] }, { quoted: m })
+      }
+      break
 
-  if (marriedTo && marriedTo !== who) {
-    let victim = conn.getName(marriedTo)
-    let str = `💔 ${name1} le fue infiel a ${victim} con ${name2} 😭\n¡Infiel y amante!`
-    await conn.sendMessage(m.chat, { gifPlayback: true, video: { url: 'https://media1.tenor.com/m/an0diNvfSSwAAAAC/marriage-anime-sailor-moon.gif' }, caption: str, mentions: [who, marriedTo] }, { quoted: m })
-    return
+    case 'divorce':
+      if (!marriages[chatId][user]) return conn.reply(chatId, 'No estás casado con nadie', m)
+      let pareja = marriages[chatId][user]
+      delete marriages[chatId][pareja]
+      delete marriages[chatId][user]
+      await conn.sendMessage(chatId, { video: { url: 'https://i.gifer.com/K7GC.gif' }, gifPlayback: true, caption: `💔 ${userName} se divorció de ${conn.getName(pareja)} 💔`, mentions: [pareja] }, { quoted: m })
+      break
   }
-
-  if (marriedBy && marriedBy !== who) {
-    let victim = conn.getName(marriedBy)
-    let str = `💔 ${name1} le fue infiel a ${victim} con ${name2} 😭\n¡Infiel y amante!`
-    await conn.sendMessage(m.chat, { gifPlayback: true, video: { url: 'https://media1.tenor.com/m/an0diNvfSSwAAAAC/marriage-anime-sailor-moon.gif' }, caption: str, mentions: [who, marriedBy] }, { quoted: m })
-    return
-  }
-
-  data[sender] = who
-  fs.writeFileSync(marriagesFile, JSON.stringify(data))
-  let str = `💞 ${name1} y ${name2} se han casado 💍✨`
-  await conn.sendMessage(m.chat, { gifPlayback: true, video: { url: 'https://media1.tenor.com/m/an0diNvfSSwAAAAC/marriage-anime-sailor-moon.gif' }, caption: str, mentions: [who] }, { quoted: m })
 }
 
-let divorce = async (m, { conn }) => {
-  let data = JSON.parse(fs.readFileSync(marriagesFile))
-  let sender = m.sender
-  let name1 = conn.getName(sender)
+handler.help = ['marry @usuario', 'divorce']
+handler.tags = ['fun']
+handler.command = ['marry', 'divorce']
+handler.group = true
 
-  if (!data[sender] && !Object.values(data).includes(sender)) return m.reply('No estás casado con nadie.')
-
-  let partner = data[sender] || Object.keys(data).find(k => data[k] === sender)
-  let name2 = conn.getName(partner)
-  delete data[sender]
-  if (data[partner] === sender) delete data[partner]
-  fs.writeFileSync(marriagesFile, JSON.stringify(data))
-
-  let str = `💔 ${name1} y ${name2} se han divorciado 😢`
-  await conn.sendMessage(m.chat, { gifPlayback: true, video: { url: 'https://i.gifer.com/K7GC.gif' }, caption: str, mentions: [partner] }, { quoted: m })
-}
-
-marry.help = ['marry']
-marry.tags = ['fun']
-marry.command = ['marry','casar']
-marry.group = true
-
-divorce.help = ['divorce']
-divorce.tags = ['fun']
-divorce.command = ['divorce','divorcio']
-divorce.group = true
-
-export default [marry, divorce]
+export default handler
