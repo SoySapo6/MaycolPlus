@@ -24,7 +24,7 @@ const handler = async (m, { conn, command, text }) => {
         const response = await axios.get('https://mayapi.ooguy.com/transcript', {
             params: {
                 url: text,
-                apikey: 'soymaycol<3'
+                apikey: 'MayHost'
             }
         })
 
