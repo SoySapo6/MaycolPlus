@@ -13,7 +13,7 @@ ${usedPrefix + command} https://www.facebook.com/watch/?v=1234567890`
     await conn.sendMessage(m.chat, { react: { text: '🕒', key: m.key } })
 
     // Usando la API nueva
-    let api = `https://mayapi.ooguy.com/facebook?url=${encodeURIComponent(args[0])}&apikey=soymaycol<3`
+    let api = `https://mayapi.ooguy.com/facebook?url=${encodeURIComponent(args[0])}&apikey=MayHost`
     let res = await fetch(api)
     let json = await res.json()
 
